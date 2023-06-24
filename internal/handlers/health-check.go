@@ -7,14 +7,14 @@ import (
 )
 
 type HealthCheckHandler struct {
-	cfg *config.AppConfig
+	appConfig *config.AppConfig
 }
 
 func NewHealthCheckHandler(
-	cfg *config.AppConfig,
+	appConfig *config.AppConfig,
 ) *HealthCheckHandler {
 	return &HealthCheckHandler{
-		cfg,
+		appConfig,
 	}
 }
 
@@ -23,8 +23,8 @@ func (hch *HealthCheckHandler) Handle(c *fiber.Ctx) error {
 		"isOk": true,
 		"data": &domains.StatusDomain{
 			Status:      "ok",
-			Version:     hch.cfg.Version,
-			Environment: hch.cfg.GoEnv,
+			Version:     hch.appConfig.Version,
+			Environment: hch.appConfig.GoEnv,
 		},
 	})
 	return nil
