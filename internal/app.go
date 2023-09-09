@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/WildEgor/gAuth/internal/config"
+	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -18,11 +19,14 @@ var AppSet = wire.NewSet(
 	NewApp,
 	config.ConfigsSet,
 	router.RouterSet,
+	db.DbSet,
 )
 
 func NewApp(
 	appConfig *config.AppConfig,
 	router *router.Router,
+	mongo *db.MongoDBConnection,
+	redis *db.RedisConnection,
 ) *fiber.App {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: error_handler.ErrorHandler,

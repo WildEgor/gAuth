@@ -1,4 +1,4 @@
-package handlers
+package health_check_handler
 
 import (
 	"github.com/WildEgor/gAuth/internal/config"
