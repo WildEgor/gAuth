@@ -5,8 +5,15 @@ go 1.20
 require github.com/caarlos0/env/v7 v7.1.0
 
 require (
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/Nerzal/gocloak/v3 v3.10.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/go-resty/resty/v2 v2.0.0 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
+	golang.org/x/net v0.8.0 // indirect
+)
+
+require (
+	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/gofiber/fiber/v2 v2.47.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

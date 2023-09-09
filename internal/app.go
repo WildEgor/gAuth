@@ -3,6 +3,7 @@ package pkg
 import (
 	"os"
 
+	"github.com/WildEgor/gAuth/internal/adapters"
 	"github.com/WildEgor/gAuth/internal/config"
 	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/router"
@@ -20,6 +21,7 @@ var AppSet = wire.NewSet(
 	config.ConfigsSet,
 	router.RouterSet,
 	db.DbSet,
+	adapters.AdaptersSet,
 )
 
 func NewApp(
