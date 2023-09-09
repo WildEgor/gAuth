@@ -24,12 +24,12 @@ func NewMongoDBConnection(
 		mongoDbConfig,
 	}
 
-	conn.connectToMongo()
+	defer conn.disconnect()
 
 	return conn
 }
 
-func (mc *MongoDBConnection) connectToMongo() {
+func (mc *MongoDBConnection) Connect() {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mc.mongoDbConfig.URI))
 	if err != nil {
 		log.Panic("Fail connect to Mongo", err)
@@ -46,6 +46,24 @@ func (mc *MongoDBConnection) connectToMongo() {
 	log.Info("Success connect to MongoDB")
 }
 
+func (mc *MongoDBConnection) disconnect() {
+	if Session == nil {
+		return
+	}
+
+	err := Session.Disconnect(context.TODO())
+	if err != nil {
+		log.Panic("Fail disconnect Mongo", err)
+		panic(err)
+	}
+
+	log.Info("Connection to MongoDB closed.")
+}
+
 func (mc *MongoDBConnection) Session() *mongo.Client {
 	return Session
+}
+
+func (mc *MongoDBConnection) DbName() string {
+	return mc.mongoDbConfig.DbName
 }

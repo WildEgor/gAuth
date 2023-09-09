@@ -7,7 +7,8 @@ import (
 )
 
 type MongoDBConfig struct {
-	URI string `env:"MONGODB_URI"`
+	DbName string `json:"MONGODB_NAME"`
+	URI    string `env:"MONGODB_URI"`
 }
 
 func NewMongoDBConfig() *MongoDBConfig {

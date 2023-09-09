@@ -6,6 +6,7 @@ require github.com/caarlos0/env/v7 v7.1.0
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/gofiber/fiber/v2 v2.47.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
@@ -18,6 +19,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect

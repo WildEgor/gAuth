@@ -21,12 +21,12 @@ func NewRedisDBConnection(
 		redisConfig,
 	}
 
-	conn.connectToRedis()
+	defer conn.disconnect()
 
 	return conn
 }
 
-func (rc *RedisConnection) connectToRedis() {
+func (rc *RedisConnection) Connect() {
 	opt, err := redis.ParseURL(rc.redisDbConfig.URI)
 	if err != nil {
 		panic(err)
@@ -40,6 +40,20 @@ func (rc *RedisConnection) connectToRedis() {
 	}
 
 	log.Info("Success connect to Redis")
+}
+
+func (mc *RedisConnection) disconnect() {
+	if Redis == nil {
+		return
+	}
+
+	err := Redis.Close()
+	if err != nil {
+		log.Panic("Fail disconnect Redis", err)
+		panic(err)
+	}
+
+	log.Info("Connection to Redis closed.")
 }
 
 func (rc *RedisConnection) Client() *redis.Client {
