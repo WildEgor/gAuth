@@ -32,7 +32,7 @@ func NewUserRepository(
 func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 
-	res := ur.mongoDbConnection.Session().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter)
+	res := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter)
 	if res.Err() != nil {
 		return nil, res.Err()
 	}
@@ -43,7 +43,7 @@ func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 }
 
 func (ur *UserRepository) FindCount(user models.UsersModel) (int64, error) {
-	count, err := ur.mongoDbConnection.Session().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, user)
+	count, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, user)
 	if err != nil {
 		return count, err
 	}
@@ -73,7 +73,7 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	_, err = ur.mongoDbConnection.Session().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
+	_, err = ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
 	if err != nil {
 		return nil, errors.New(`{"mail":"need uniq mail"}`)
 	}

@@ -2,34 +2,33 @@ package db
 
 import (
 	"context"
+	"github.com/WildEgor/gAuth/internal/configs"
 
-	"github.com/WildEgor/gAuth/internal/config"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	Session *mongo.Client
-)
-
 type MongoDBConnection struct {
-	mongoDbConfig *config.MongoDBConfig
+	Client        *mongo.Client
+	mongoDbConfig *configs.MongoDBConfig
 }
 
 func NewMongoDBConnection(
-	mongoDbConfig *config.MongoDBConfig,
+	mongoDbConfig *configs.MongoDBConfig,
 ) *MongoDBConnection {
 	conn := &MongoDBConnection{
+		nil,
 		mongoDbConfig,
 	}
 
 	defer conn.disconnect()
-
 	return conn
 }
 
 func (mc *MongoDBConnection) Connect() {
+	log.Error(mc.mongoDbConfig.URI)
+
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mc.mongoDbConfig.URI))
 	if err != nil {
 		log.Panic("Fail connect to Mongo", err)
@@ -41,17 +40,17 @@ func (mc *MongoDBConnection) Connect() {
 		log.Panic("Fail connect to Mongo", err)
 	}
 
-	Session = client
+	mc.Client = client
 
 	log.Info("Success connect to MongoDB")
 }
 
 func (mc *MongoDBConnection) disconnect() {
-	if Session == nil {
+	if mc.Client == nil {
 		return
 	}
 
-	err := Session.Disconnect(context.TODO())
+	err := mc.Client.Disconnect(context.TODO())
 	if err != nil {
 		log.Panic("Fail disconnect Mongo", err)
 		panic(err)
@@ -60,8 +59,8 @@ func (mc *MongoDBConnection) disconnect() {
 	log.Info("Connection to MongoDB closed.")
 }
 
-func (mc *MongoDBConnection) Session() *mongo.Client {
-	return Session
+func (mc *MongoDBConnection) Instance() *mongo.Client {
+	return mc.Client
 }
 
 func (mc *MongoDBConnection) DbName() string {

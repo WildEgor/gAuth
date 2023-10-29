@@ -3,7 +3,7 @@ package middlewares
 import (
 	"errors"
 
-	keycloak_adapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
+	kcAdapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
@@ -12,7 +12,7 @@ import (
 type AuthMiddlewareConfig struct {
 	Filter func(c *fiber.Ctx) bool
 
-	KeycloakAdapter *keycloak_adapter.KeycloakAdapter
+	KeycloakAdapter *kcAdapter.KeycloakAdapter
 
 	Unauthorized fiber.Handler
 	Decode       func(c *fiber.Ctx) (*jwt.MapClaims, error)

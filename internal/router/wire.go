@@ -5,4 +5,8 @@ import (
 	"github.com/google/wire"
 )
 
-var RouterSet = wire.NewSet(NewRouter, handlers.HandlersSet)
+var RouterSet = wire.NewSet(
+	NewPublicRouter,
+	NewSwaggerRouter,
+	handlers.HandlersSet,
+)

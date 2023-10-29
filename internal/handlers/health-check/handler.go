@@ -1,17 +1,17 @@
 package health_check_handler
 
 import (
-	"github.com/WildEgor/gAuth/internal/config"
+	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	"github.com/gofiber/fiber/v2"
 )
 
 type HealthCheckHandler struct {
-	appConfig *config.AppConfig
+	appConfig *configs.AppConfig
 }
 
 func NewHealthCheckHandler(
-	appConfig *config.AppConfig,
+	appConfig *configs.AppConfig,
 ) *HealthCheckHandler {
 	return &HealthCheckHandler{
 		appConfig,

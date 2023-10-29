@@ -1,10 +1,10 @@
 package pkg
 
 import (
+	"github.com/WildEgor/gAuth/internal/configs"
 	"os"
 
 	"github.com/WildEgor/gAuth/internal/adapters"
-	"github.com/WildEgor/gAuth/internal/config"
 	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
@@ -18,15 +18,16 @@ import (
 
 var AppSet = wire.NewSet(
 	NewApp,
-	config.ConfigsSet,
+	configs.ConfigsSet,
 	router.RouterSet,
 	db.DbSet,
 	adapters.AdaptersSet,
 )
 
 func NewApp(
-	appConfig *config.AppConfig,
-	router *router.Router,
+	appConfig *configs.AppConfig,
+	pbRouter *router.PublicRouter,
+	swaggerRouter *router.SwaggerRouter,
 	mongo *db.MongoDBConnection,
 	redis *db.RedisConnection,
 ) *fiber.App {
@@ -49,11 +50,13 @@ func NewApp(
 	if !appConfig.IsProduction() {
 		// HINT: some extra setting
 		log.SetLevel(log.DebugLevel)
+		log.SetLevel(log.ErrorLevel)
 	} else {
 		log.SetLevel(log.ErrorLevel)
 	}
 
-	router.Setup(app)
+	pbRouter.SetupPublicRouter(app)
+	swaggerRouter.SetupSwaggerRouter(app)
 
 	mongo.Connect()
 	redis.Connect()

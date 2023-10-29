@@ -2,22 +2,21 @@ package keycloak_adapter
 
 import (
 	"github.com/Nerzal/gocloak/v3"
-	"github.com/WildEgor/gAuth/internal/config"
+	"github.com/WildEgor/gAuth/internal/configs"
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	client gocloak.GoCloak
-)
-
 type KeycloakAdapter struct {
-	keycloakConfig *config.KeycloakConfig
+	Client         gocloak.GoCloak
+	keycloakConfig *configs.KeycloakConfig
 }
 
+// NewKeycloakAdapter Create new Keycloak Adapter
 func NewKeycloakAdapter(
-	keycloakConfig *config.KeycloakConfig,
+	keycloakConfig *configs.KeycloakConfig,
 ) *KeycloakAdapter {
 	adapter := &KeycloakAdapter{
+		nil,
 		keycloakConfig,
 	}
 
@@ -27,13 +26,13 @@ func NewKeycloakAdapter(
 }
 
 func (ka *KeycloakAdapter) newClient() {
-	keycloakClient := gocloak.NewClient(ka.keycloakConfig.API)
-	client = keycloakClient
+	ka.Client = gocloak.NewClient(ka.keycloakConfig.API)
 	log.Info("Success init Keycloak")
 }
 
+// Login Auth in Keycloak
 func (ka *KeycloakAdapter) Login(user string, pass string) (*JWT, error) {
-	token, err := client.Login("admin-cli", "", "master", user, pass)
+	token, err := ka.Client.Login("admin-cli", "", "master", user, pass)
 	if err != nil {
 		log.Error("Keycloak login failed")
 		return nil, err

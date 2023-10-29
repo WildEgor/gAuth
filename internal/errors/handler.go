@@ -2,6 +2,7 @@ package error_handler
 
 import (
 	"errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,11 +18,23 @@ var ErrorHandler = func(c *fiber.Ctx, err error) error {
 
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	c.Status(code).JSON(fiber.Map{
-		"isOk": false,
-		"data": fiber.Map{
-			"message": e.Error(),
-		},
-	})
+	if e != nil {
+		log.Error(e.Error())
+
+		c.Status(code).JSON(fiber.Map{
+			"isOk": false,
+			"data": fiber.Map{
+				"message": e.Error(),
+			},
+		})
+	} else {
+		c.Status(code).JSON(fiber.Map{
+			"isOk": false,
+			"data": fiber.Map{
+				"message": "UNKNOWN_ERROR",
+			},
+		})
+	}
+
 	return nil
 }

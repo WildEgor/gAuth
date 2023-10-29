@@ -1,8 +1,7 @@
-package config
+package configs
 
 import (
 	"github.com/caarlos0/env/v7"
-	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -13,21 +12,19 @@ type AppConfig struct {
 	Version string `env:"VERSION"`
 }
 
-func NewAppConfig() *AppConfig {
+func NewAppConfig(c *Configurator) *AppConfig {
 	cfg := AppConfig{}
 
-	if err := godotenv.Load(".env"); err == nil {
-		if err := env.Parse(&cfg); err != nil {
-			log.Printf("[AppConfig] %+v\n", err)
-		}
+	if err := env.Parse(&cfg); err != nil {
+		log.Printf("[AppConfig] %+v\n", err)
+	}
 
-		if cfg.GoEnv == "" {
-			cfg.GoEnv = "local"
-		}
+	if cfg.GoEnv == "" {
+		cfg.GoEnv = "local"
+	}
 
-		if cfg.Version == "" {
-			cfg.Version = "local"
-		}
+	if cfg.Version == "" {
+		cfg.Version = "local"
 	}
 
 	return &cfg

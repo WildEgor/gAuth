@@ -7,9 +7,10 @@
 package pkg
 
 import (
-	"github.com/WildEgor/gAuth/internal/config"
+	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/handlers/health-check"
+	"github.com/WildEgor/gAuth/internal/handlers/registration"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
@@ -18,14 +19,17 @@ import (
 // Injectors from server.go:
 
 func NewServer() (*fiber.App, error) {
-	appConfig := config.NewAppConfig()
+	configurator := configs.NewConfigurator()
+	appConfig := configs.NewAppConfig(configurator)
 	healthCheckHandler := health_check_handler.NewHealthCheckHandler(appConfig)
-	routerRouter := router.NewRouter(healthCheckHandler)
-	mongoDBConfig := config.NewMongoDBConfig()
+	registrationHandler := registration_handler.NewRegistrationHandler()
+	publicRouter := router.NewPublicRouter(healthCheckHandler, registrationHandler)
+	swaggerRouter := router.NewSwaggerRouter()
+	mongoDBConfig := configs.NewMongoDBConfig(configurator)
 	mongoDBConnection := db.NewMongoDBConnection(mongoDBConfig)
-	redisConfig := config.NewRedisConfig()
+	redisConfig := configs.NewRedisConfig(configurator)
 	redisConnection := db.NewRedisDBConnection(redisConfig)
-	app := NewApp(appConfig, routerRouter, mongoDBConnection, redisConnection)
+	app := NewApp(appConfig, publicRouter, swaggerRouter, mongoDBConnection, redisConnection)
 	return app, nil
 }
 

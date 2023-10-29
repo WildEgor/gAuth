@@ -1,54 +1,51 @@
 package db
 
 import (
-	"github.com/WildEgor/gAuth/internal/config"
+	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/go-redis/redis"
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	Redis *redis.Client
-)
-
 type RedisConnection struct {
-	redisDbConfig *config.RedisConfig
+	Client        *redis.Client
+	redisDbConfig *configs.RedisConfig
 }
 
 func NewRedisDBConnection(
-	redisConfig *config.RedisConfig,
+	redisConfig *configs.RedisConfig,
 ) *RedisConnection {
 	conn := &RedisConnection{
+		nil,
 		redisConfig,
 	}
 
 	defer conn.disconnect()
-
 	return conn
 }
 
 func (rc *RedisConnection) Connect() {
 	opt, err := redis.ParseURL(rc.redisDbConfig.URI)
 	if err != nil {
+		log.Panic("Fail parse URL ", err)
 		panic(err)
 	}
-	Redis = redis.NewClient(opt)
 
-	_, err = Redis.Ping().Result()
-	if err != nil {
-		log.Panic("Fail connect to Redis")
+	rc.Client = redis.NewClient(opt)
+
+	if _, err := rc.Client.Ping().Result(); err != nil {
+		log.Panic("Fail connect to Redis ", err)
 		panic(err)
 	}
 
 	log.Info("Success connect to Redis")
 }
 
-func (mc *RedisConnection) disconnect() {
-	if Redis == nil {
+func (rc *RedisConnection) disconnect() {
+	if rc.Client == nil {
 		return
 	}
 
-	err := Redis.Close()
-	if err != nil {
+	if err := rc.Client.Close(); err != nil {
 		log.Panic("Fail disconnect Redis", err)
 		panic(err)
 	}
@@ -56,6 +53,6 @@ func (mc *RedisConnection) disconnect() {
 	log.Info("Connection to Redis closed.")
 }
 
-func (rc *RedisConnection) Client() *redis.Client {
-	return Redis
+func (rc *RedisConnection) Instance() *redis.Client {
+	return rc.Client
 }
