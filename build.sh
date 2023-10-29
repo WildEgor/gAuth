@@ -1,1 +1,1 @@
-cd ./internal && wire
+cd internal && wire

@@ -27,8 +27,6 @@ func NewMongoDBConnection(
 }
 
 func (mc *MongoDBConnection) Connect() {
-	log.Error(mc.mongoDbConfig.URI)
-
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mc.mongoDbConfig.URI))
 	if err != nil {
 		log.Panic("Fail connect to Mongo", err)

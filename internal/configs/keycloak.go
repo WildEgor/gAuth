@@ -6,7 +6,10 @@ import (
 )
 
 type KeycloakConfig struct {
-	API string `env:"KEYCLOAK_URL"`
+	ClientID     string `env:"KEYCLOAK_CLIENT_ID"`
+	ClientSecret string `env:"KEYCLOAK_CLIENT_SECRET"`
+	Realm        string `env:"KEYCLOAK_REALM"`
+	API          string `env:"KEYCLOAK_URL"`
 }
 
 func NewKeycloakConfig(c *Configurator) *KeycloakConfig {

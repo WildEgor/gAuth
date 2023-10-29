@@ -6,7 +6,7 @@ import (
 )
 
 type MongoDBConfig struct {
-	DbName string `json:"MONGODB_NAME"`
+	DbName string `env:"MONGODB_NAME"`
 	URI    string `env:"MONGODB_URI"`
 }
 

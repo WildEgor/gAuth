@@ -61,6 +61,5 @@ func NewApp(
 	mongo.Connect()
 	redis.Connect()
 
-	log.Info("Application is running on port...")
 	return app
 }
