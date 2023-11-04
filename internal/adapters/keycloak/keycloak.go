@@ -100,3 +100,43 @@ func (ka *KeycloakAdapter) Login(user string, pass string) (*JWT, error) {
 
 	return jwt, nil
 }
+
+func (ka *KeycloakAdapter) CheckExists(ctx context.Context, user string) (bool, error) {
+	token, err := ka.loginClient(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	search := fmt.Sprintf("%s*", user)
+	count, err := ka.Client.GetUserCount(ctx, token.AccessToken, ka.keycloakConfig.Realm, gocloak.GetUsersParams{
+		Search: &search,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (ka *KeycloakAdapter) DeleteByEmail(ctx context.Context, email string) error {
+	token, err := ka.loginClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	users, err := ka.Client.GetUsers(ctx, token.AccessToken, ka.keycloakConfig.Realm, gocloak.GetUsersParams{
+		Email: &email,
+	})
+	if err != nil {
+		return err
+	}
+
+	userId := *users[0].ID
+
+	dErr := ka.Client.DeleteUser(ctx, token.AccessToken, ka.keycloakConfig.Realm, userId)
+	if dErr != nil {
+		return dErr
+	}
+
+	return nil
+}

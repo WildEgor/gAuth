@@ -7,12 +7,11 @@ import (
 	"github.com/WildEgor/gAuth/internal/models"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
-	DbName = "test"
+	DbName = "auth"
 )
 
 type UserRepository struct {
@@ -29,17 +28,41 @@ func NewUserRepository(
 	}
 }
 
+func (ur *UserRepository) FindByLogin(login string, password string) (*models.UsersModel, error) {
+	filter := bson.D{
+		{"$or",
+			bson.A{
+				bson.D{{"phone", bson.D{{"$eq", login}}}},
+				bson.D{{"email", bson.D{{"$eq", login}}}},
+			},
+		},
+	}
+	var us models.UsersModel
+	err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := []byte(us.Password)
+	compPass := []byte(password)
+	err = bcrypt.CompareHashAndPassword(hash, compPass)
+	if err != nil {
+		return nil, err
+	}
+
+	return &us, nil
+}
+
 func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 
-	res := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter)
-	if res.Err() != nil {
-		return nil, res.Err()
+	var us models.UsersModel
+	err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	if err != nil {
+		return nil, err
 	}
 
-	var us *models.UsersModel
-	res.Decode(us)
-	return us, nil
+	return &us, nil
 }
 
 func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, error) {
@@ -71,7 +94,6 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 	nu.Password = string(hash)
 
 	us := &models.UsersModel{
-		Id:           primitive.NewObjectID(),
 		Email:        nu.Email,
 		Phone:        nu.Phone,
 		Password:     nu.Password,
@@ -83,10 +105,10 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 		UpdatedAt:    time.Now().UTC(),
 	}
 
-	//_, err = ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
-	//if err != nil {
-	//	return nil, errors.New(`{"mail":"need uniq mail"}`)
-	//}
+	_, err = ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
+	if err != nil {
+		return nil, errors.New(`{"mail":"need uniq mail"}`)
+	}
 
 	return us, nil
 }

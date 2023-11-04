@@ -1,6 +1,6 @@
 package auth
 
 type OTPLoginRequestDto struct {
-	Phone string `json:"phone,omitempty"`
-	Code  string `json:"code,omitempty"`
+	Phone string `json:"phone"`
+	Code  string `json:"code"`
 }

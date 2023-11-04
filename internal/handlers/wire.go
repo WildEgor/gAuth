@@ -2,6 +2,7 @@ package handlers
 
 import (
 	health_check_handler "github.com/WildEgor/gAuth/internal/handlers/health-check"
+	login_handler "github.com/WildEgor/gAuth/internal/handlers/login"
 	me_handler "github.com/WildEgor/gAuth/internal/handlers/me"
 	registration_handler "github.com/WildEgor/gAuth/internal/handlers/registration"
 	"github.com/WildEgor/gAuth/internal/repositories"
@@ -13,4 +14,5 @@ var HandlersSet = wire.NewSet(
 	health_check_handler.NewHealthCheckHandler,
 	me_handler.NewMeHandler,
 	registration_handler.NewRegistrationHandler,
+	login_handler.NewLoginHandler,
 )

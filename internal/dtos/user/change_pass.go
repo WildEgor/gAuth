@@ -1,6 +1,6 @@
 package user
 
 type ChangePasswordRequestDto struct {
-	OldPassword string `json:"old,omitempty"`
-	NewPassword string `json:"new,omitempty"`
+	OldPassword string `json:"old"`
+	NewPassword string `json:"new"`
 }

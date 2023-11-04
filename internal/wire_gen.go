@@ -11,6 +11,7 @@ import (
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/handlers/health-check"
+	"github.com/WildEgor/gAuth/internal/handlers/login"
 	"github.com/WildEgor/gAuth/internal/handlers/registration"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/router"
@@ -30,7 +31,8 @@ func NewServer() (*fiber.App, error) {
 	keycloakConfig := configs.NewKeycloakConfig(configurator)
 	keycloakAdapter := keycloak_adapter.NewKeycloakAdapter(keycloakConfig)
 	registrationHandler := registration_handler.NewRegistrationHandler(userRepository, keycloakAdapter)
-	publicRouter := router.NewPublicRouter(healthCheckHandler, registrationHandler)
+	loginHandler := login_handler.NewLoginHandler(userRepository)
+	publicRouter := router.NewPublicRouter(healthCheckHandler, registrationHandler, loginHandler, keycloakAdapter)
 	swaggerRouter := router.NewSwaggerRouter()
 	redisConfig := configs.NewRedisConfig(configurator)
 	redisConnection := db.NewRedisDBConnection(redisConfig)
