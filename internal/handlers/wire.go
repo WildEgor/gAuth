@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	centrifuge_validate_token_handler "github.com/WildEgor/gAuth/internal/handlers/centrifuge-validate-token"
 	change_password_handler "github.com/WildEgor/gAuth/internal/handlers/change-password"
 	health_check_handler "github.com/WildEgor/gAuth/internal/handlers/health-check"
 	login_handler "github.com/WildEgor/gAuth/internal/handlers/login"
@@ -17,4 +18,5 @@ var HandlersSet = wire.NewSet(
 	registration_handler.NewRegistrationHandler,
 	login_handler.NewLoginHandler,
 	change_password_handler.NewChangePasswordHandler,
+	centrifuge_validate_token_handler.NewCentrifugeValidateToken,
 )

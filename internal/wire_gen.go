@@ -29,7 +29,7 @@ func NewServer() (*fiber.App, error) {
 	mongoDBConfig := configs.NewMongoDBConfig(configurator)
 	mongoDBConnection := db.NewMongoDBConnection(mongoDBConfig)
 	userRepository := repositories.NewUserRepository(mongoDBConnection)
-	keycloakConfig := configs.NewKeycloakConfig(configurator)
+	keycloakConfig := configs.NewKeycloakConfig()
 	keycloakAdapter := keycloak_adapter.NewKeycloakAdapter(keycloakConfig)
 	registrationHandler := registration_handler.NewRegistrationHandler(userRepository, keycloakAdapter)
 	loginHandler := login_handler.NewLoginHandler(userRepository)

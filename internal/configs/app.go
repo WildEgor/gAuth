@@ -7,6 +7,7 @@ import (
 
 type AppConfig struct {
 	Port    string `env:"APP_PORT"`
+	RPCPort string `env:"GRPC_PORT"`
 	Mode    string `env:"APP_MODE"`
 	GoEnv   string `env:"GO_ENV"`
 	Version string `env:"VERSION"`

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"github.com/WildEgor/gAuth/internal/configs"
+	"github.com/WildEgor/gAuth/internal/proto"
 	"os"
 
 	"github.com/WildEgor/gAuth/internal/adapters"
@@ -18,6 +19,7 @@ import (
 
 var AppSet = wire.NewSet(
 	NewApp,
+	proto.GRPCSet,
 	configs.ConfigsSet,
 	router.RouterSet,
 	db.DbSet,
