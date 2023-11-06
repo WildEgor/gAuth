@@ -14,12 +14,10 @@ func NewSwaggerRouter() *SwaggerRouter {
 }
 
 // SetupSwaggerRouter func for describe group of API Docs routes.
-func (sr *SwaggerRouter) SetupSwaggerRouter(app *fiber.App) error {
+func (sr *SwaggerRouter) SetupSwaggerRouter(app *fiber.App) {
 	// Create routes group.
 	route := app.Group("/swagger")
 
 	// Routes for GET method:
 	route.Get("*", swagger.HandlerDefault)
-
-	return nil
 }

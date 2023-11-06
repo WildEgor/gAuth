@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	change_password_handler "github.com/WildEgor/gAuth/internal/handlers/change-password"
 	health_check_handler "github.com/WildEgor/gAuth/internal/handlers/health-check"
 	login_handler "github.com/WildEgor/gAuth/internal/handlers/login"
 	me_handler "github.com/WildEgor/gAuth/internal/handlers/me"
@@ -15,4 +16,5 @@ var HandlersSet = wire.NewSet(
 	me_handler.NewMeHandler,
 	registration_handler.NewRegistrationHandler,
 	login_handler.NewLoginHandler,
+	change_password_handler.NewChangePasswordHandler,
 )

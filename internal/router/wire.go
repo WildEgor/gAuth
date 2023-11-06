@@ -7,6 +7,7 @@ import (
 
 var RouterSet = wire.NewSet(
 	NewPublicRouter,
+	NewPrivateRouter,
 	NewSwaggerRouter,
 	handlers.HandlersSet,
 )

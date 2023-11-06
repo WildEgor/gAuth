@@ -2,6 +2,7 @@ package login_handler
 
 import (
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
+	"github.com/WildEgor/gAuth/internal/middlewares"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/validators"
 	"github.com/gofiber/fiber/v2"
@@ -49,22 +50,12 @@ func (h *LoginHandler) Handle(c *fiber.Ctx) error {
 		return nil
 	}
 
-	user, err := h.userRepo.FindByLogin(dto.Login, dto.Password)
-	if err != nil {
-		c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"isOk": true,
-			"data": fiber.Map{
-				"message": "Not authorized",
-			},
-		})
-
-		return nil
-	}
+	authUser := middlewares.ExtractUser(c)
 
 	c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"isOk": true,
 		"data": fiber.Map{
-			"user_id":       user.Id.Hex(),
+			"user_id":       authUser.Id.Hex(),
 			"access_token":  jwtClaims["access_token"],
 			"refresh_token": jwtClaims["refresh_token"],
 		},

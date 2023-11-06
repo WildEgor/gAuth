@@ -11,3 +11,8 @@ type JWT struct {
 	SessionState     string `json:"session_state"`
 	Scope            string `json:"scope"`
 }
+
+type KeycloakUserInfo struct {
+	Id    string `json:"id"`
+	Email string `json:"email"`
+}

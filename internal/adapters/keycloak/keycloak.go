@@ -39,13 +39,14 @@ func (ka *KeycloakAdapter) loginClient(ctx context.Context) (*gocloak.JWT, error
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to login the rest client")
 	}
+
 	return token, nil
 }
 
 func (ka *KeycloakAdapter) CreateUser(ctx context.Context, user gocloak.User, password string, role string) (*gocloak.User, error) {
 	token, err := ka.loginClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable login to keycloak")
 	}
 
 	userId, err := ka.Client.CreateUser(ctx, token.AccessToken, ka.keycloakConfig.Realm, user)
@@ -82,8 +83,7 @@ func (ka *KeycloakAdapter) CreateUser(ctx context.Context, user gocloak.User, pa
 func (ka *KeycloakAdapter) Login(user string, pass string) (*JWT, error) {
 	token, err := ka.Client.Login(context.Background(), ka.keycloakConfig.ClientID, ka.keycloakConfig.ClientSecret, ka.keycloakConfig.Realm, user, pass)
 	if err != nil {
-		log.Error("Keycloak login failed")
-		return nil, err
+		return nil, errors.Wrap(err, "keycloak login failed")
 	}
 
 	var jwt *JWT = &JWT{
@@ -138,5 +138,50 @@ func (ka *KeycloakAdapter) DeleteByEmail(ctx context.Context, email string) erro
 		return dErr
 	}
 
+	logoutErr := ka.Client.LogoutAllSessions(ctx, token.AccessToken, ka.keycloakConfig.Realm, userId)
+	if logoutErr != nil {
+		return logoutErr
+	}
+
 	return nil
+}
+
+func (ka *KeycloakAdapter) UpdatePassword(ctx context.Context, email string, newPassword string) error {
+	token, err := ka.loginClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	users, err := ka.Client.GetUsers(ctx, token.AccessToken, ka.keycloakConfig.Realm, gocloak.GetUsersParams{
+		Email: &email,
+	})
+	if err != nil {
+		return err
+	}
+
+	userId := *users[0].ID
+
+	setErr := ka.Client.SetPassword(ctx, token.AccessToken, userId, ka.keycloakConfig.Realm, newPassword, false)
+	if setErr != nil {
+		return err
+	}
+
+	logoutErr := ka.Client.LogoutAllSessions(ctx, token.AccessToken, ka.keycloakConfig.Realm, userId)
+	if logoutErr != nil {
+		return logoutErr
+	}
+
+	return nil
+}
+
+func (ka *KeycloakAdapter) UserInfoByToken(ctx context.Context, token string) (*KeycloakUserInfo, error) {
+	info, err := ka.Client.GetUserInfo(ctx, token, ka.keycloakConfig.Realm)
+	if err != nil {
+		return nil, err
+	}
+
+	return &KeycloakUserInfo{
+		Id:    *info.Sub,
+		Email: *info.Email,
+	}, nil
 }

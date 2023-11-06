@@ -28,6 +28,18 @@ func NewUserRepository(
 	}
 }
 
+func (ur *UserRepository) FindByEmail(email string) (*models.UsersModel, error) {
+	filter := bson.D{{Key: "email", Value: email}}
+
+	var us models.UsersModel
+	err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	if err != nil {
+		return nil, err
+	}
+
+	return &us, nil
+}
+
 func (ur *UserRepository) FindByLogin(login string, password string) (*models.UsersModel, error) {
 	filter := bson.D{
 		{"$or",
@@ -111,4 +123,24 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 	}
 
 	return us, nil
+}
+
+func (ur *UserRepository) Update(nu models.UsersModel) error {
+	nu.UpdatedAt = time.Now().UTC()
+
+	update := bson.D{
+		{"$set",
+			bson.D{
+				{"password", nu.Password},
+				{"updated_at", nu.UpdatedAt},
+			},
+		},
+	}
+
+	_, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).UpdateByID(nil, nu.Id, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

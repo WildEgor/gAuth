@@ -44,16 +44,20 @@ func (h *RegistrationHandler) Handle(c *fiber.Ctx) error {
 		return err
 	}
 
-	userModel := models.UsersModel{
-		Email:     dto.Email,
-		Phone:     dto.Phone,
-		Password:  dto.Password,
-		FirstName: dto.FirstName,
-		LastName:  dto.LastName,
+	var keycloakUser = gocloak.User{
+		Username:      gocloak.StringP(dto.Phone),
+		FirstName:     gocloak.StringP(dto.FirstName),
+		LastName:      gocloak.StringP(dto.LastName),
+		Email:         gocloak.StringP(dto.Email),
+		EmailVerified: gocloak.BoolP(true),
+		Enabled:       gocloak.BoolP(true),
+		Attributes: &map[string][]string{
+			"mobile": {dto.Phone},
+		},
 	}
 
-	_, mongoErr := h.userRepo.Create(userModel)
-	if mongoErr != nil {
+	user, createErr := h.kcAdapter.CreateUser(context.Background(), keycloakUser, dto.Password, "user")
+	if createErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
 			"data": &domains.ErrorResponseDomain{
@@ -65,20 +69,16 @@ func (h *RegistrationHandler) Handle(c *fiber.Ctx) error {
 		return nil
 	}
 
-	var keycloakUser = gocloak.User{
-		Username:      gocloak.StringP(dto.Phone),
-		FirstName:     gocloak.StringP(dto.FirstName),
-		LastName:      gocloak.StringP(dto.LastName),
-		Email:         gocloak.StringP(dto.Email),
-		EmailVerified: gocloak.BoolP(true),
-		Enabled:       gocloak.BoolP(true),
-		Attributes: &map[string][]string{
-			"mobile": []string{dto.Phone},
-		},
+	userModel := models.UsersModel{
+		Email:     dto.Email,
+		Phone:     dto.Phone,
+		Password:  dto.Password,
+		FirstName: dto.FirstName,
+		LastName:  dto.LastName,
 	}
 
-	user, createErr := h.kcAdapter.CreateUser(context.Background(), keycloakUser, dto.Password, "user")
-	if createErr != nil {
+	_, mongoErr := h.userRepo.Create(userModel)
+	if mongoErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
 			"data": &domains.ErrorResponseDomain{

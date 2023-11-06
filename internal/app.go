@@ -27,6 +27,7 @@ var AppSet = wire.NewSet(
 func NewApp(
 	appConfig *configs.AppConfig,
 	pbRouter *router.PublicRouter,
+	prRouter *router.PrivateRouter,
 	swaggerRouter *router.SwaggerRouter,
 	mongo *db.MongoDBConnection,
 	redis *db.RedisConnection,
@@ -55,6 +56,7 @@ func NewApp(
 		log.SetLevel(log.ErrorLevel)
 	}
 
+	prRouter.SetupPrivateRouter(app)
 	pbRouter.SetupPublicRouter(app)
 	swaggerRouter.SetupSwaggerRouter(app)
 

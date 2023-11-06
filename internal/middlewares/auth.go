@@ -1,10 +1,15 @@
 package middlewares
 
 import (
-	"errors"
-	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
+	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
+	"fmt"
+	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/repositories"
-	"github.com/WildEgor/gAuth/internal/validators"
+	"github.com/pkg/errors"
+	"strings"
 
 	kcAdapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
 	"github.com/gofiber/fiber/v2"
@@ -17,6 +22,7 @@ type AuthMiddlewareConfig struct {
 
 	UserRepo        *repositories.UserRepository
 	KeycloakAdapter *kcAdapter.KeycloakAdapter
+	KeycloakConfig  *configs.KeycloakConfig
 
 	Unauthorized fiber.Handler
 	Decode       func(c *fiber.Ctx) (*jwt.MapClaims, error)
@@ -28,7 +34,7 @@ var AuthMiddlewareConfigDefault = AuthMiddlewareConfig{
 	Unauthorized: nil,
 }
 
-func configDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
+func configAuthDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 	if len(config) < 1 {
 		return AuthMiddlewareConfigDefault
 	}
@@ -36,37 +42,65 @@ func configDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 	cfg := config[0]
 
 	if cfg.Filter == nil {
-		cfg.Filter = AuthMiddlewareConfigDefault.Filter
+		cfg.Filter = LoginMiddlewareConfigDefault.Filter
 	}
 
 	if cfg.Decode == nil {
 		// Set default Decode function if not passed
 		cfg.Decode = func(c *fiber.Ctx) (*jwt.MapClaims, error) {
-			payload := &authDtos.LoginRequestDto{}
-			if err := validators.ParseAndValidate(c, payload); err != nil {
-				return nil, errors.New("login/password required")
+			var token string
+			headerValue := c.Get("authorization")
+
+			if len(headerValue) > 0 {
+				components := strings.SplitN(headerValue, " ", 2)
+
+				if len(components) == 2 && components[0] == "Bearer" {
+					token = components[1]
+				}
 			}
 
-			res, err := cfg.KeycloakAdapter.Login(payload.Login, payload.Password)
+			if len(token) == 0 {
+				return nil, errors.New("empty token")
+			}
+
+			publicKey, err := parseKeycloakRSAPublicKey(cfg.KeycloakConfig.RSAPublicKey)
 			if err != nil {
-				return nil, errors.New("email/password invalid")
+				return nil, errors.Wrap(err, "parse rsa error")
 			}
 
-			log.Info("[AuthMiddleware] token: %v", res.AccessToken)
+			parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+				// Don't forget to validate the alg is what you expect:
+				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+					return nil, errors.New(fmt.Sprintf("Unexpected signing method: %v", token.Header["alg"]))
+				}
 
-			jwtPayload := jwt.MapClaims{
-				"sub":           "user",
-				"typ":           res.TokenType,
-				"exp":           res.ExpiresIn,
-				"access_token":  res.AccessToken,
-				"refresh_token": res.RefreshToken,
+				return publicKey, nil
+			})
+
+			claims, ok := parsedToken.Claims.(jwt.MapClaims)
+
+			res, err := cfg.KeycloakAdapter.UserInfoByToken(context.Background(), token)
+			if err != nil {
+				return nil, errors.Wrap(err, "invalid token")
 			}
 
-			// FIXME: validate another payload
-			//err = jwtPayload.Valid()
-			//if err != nil {
-			//	return nil, errors.New("invalid token")
-			//}
+			log.Info("[AuthMiddleware] token: %v", token)
+
+			var jwtPayload jwt.MapClaims
+
+			if ok && parsedToken.Valid {
+
+				jwtPayload = jwt.MapClaims{
+					"sub":           res.Email,
+					"typ":           claims["typ"],
+					"exp":           claims["exp"],
+					"access_token":  token,
+					"refresh_token": "",
+				}
+
+			} else {
+				return nil, errors.Wrap(err, "token validation")
+			}
 
 			return &jwtPayload, nil
 		}
@@ -82,9 +116,10 @@ func configDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 	return cfg
 }
 
+// NewAuthMiddleware validate accessToken in Keycloak and parse it, extract user from DB
 func NewAuthMiddleware(config AuthMiddlewareConfig) fiber.Handler {
 	// For setting default config
-	cfg := configDefault(config)
+	cfg := configAuthDefault(config)
 
 	return func(c *fiber.Ctx) error {
 		// Don't execute middleware if Filter returns true
@@ -97,9 +132,36 @@ func NewAuthMiddleware(config AuthMiddlewareConfig) fiber.Handler {
 		claims, err := cfg.Decode(c)
 		if err == nil {
 			c.Locals("jwtClaims", *claims)
-			return c.Next()
+
+			email := (*claims)["sub"].(string)
+			user, err := cfg.UserRepo.FindByEmail(email)
+			if err == nil {
+				c.Locals("user", *user)
+				return c.Next()
+			}
 		}
 
-		return cfg.Unauthorized(c)
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"isOk": false,
+			"error": fiber.Map{
+				"message": "Unauthorized",
+			},
+		})
 	}
+}
+
+func parseKeycloakRSAPublicKey(base64Encoded string) (*rsa.PublicKey, error) {
+	buf, err := base64.StdEncoding.DecodeString(base64Encoded)
+	if err != nil {
+		return nil, err
+	}
+	parsedKey, err := x509.ParsePKIXPublicKey(buf)
+	if err != nil {
+		return nil, err
+	}
+	publicKey, ok := parsedKey.(*rsa.PublicKey)
+	if ok {
+		return publicKey, nil
+	}
+	return nil, fmt.Errorf("unexpected key type %T", publicKey)
 }

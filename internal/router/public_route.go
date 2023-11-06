@@ -6,6 +6,7 @@ import (
 	loHandler "github.com/WildEgor/gAuth/internal/handlers/login"
 	rcHandler "github.com/WildEgor/gAuth/internal/handlers/registration"
 	"github.com/WildEgor/gAuth/internal/middlewares"
+	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,6 +15,7 @@ type PublicRouter struct {
 	rc *rcHandler.RegistrationHandler
 	lo *loHandler.LoginHandler
 	ka *kcAdapter.KeycloakAdapter
+	ur *repositories.UserRepository
 }
 
 func NewPublicRouter(
@@ -21,16 +23,18 @@ func NewPublicRouter(
 	rc *rcHandler.RegistrationHandler,
 	lo *loHandler.LoginHandler,
 	ka *kcAdapter.KeycloakAdapter,
+	ur *repositories.UserRepository,
 ) *PublicRouter {
 	return &PublicRouter{
 		hc: hc,
 		rc: rc,
 		lo: lo,
 		ka: ka,
+		ur: ur,
 	}
 }
 
-func (r *PublicRouter) SetupPublicRouter(app *fiber.App) error {
+func (r *PublicRouter) SetupPublicRouter(app *fiber.App) {
 	v1 := app.Group("/api/v1")
 
 	// Server endpoint - sanity check that the server is running
@@ -40,11 +44,10 @@ func (r *PublicRouter) SetupPublicRouter(app *fiber.App) error {
 	userController := v1.Group("/user")
 	userController.Post("reg", r.rc.Handle)
 
-	authMiddleware := middlewares.NewAuthMiddleware(middlewares.AuthMiddlewareConfig{
+	loginMiddleware := middlewares.NewLoginMiddleware(middlewares.LoginMiddlewareConfig{
 		KeycloakAdapter: r.ka,
+		UserRepo:        r.ur,
 	})
 	authController := v1.Group("/auth")
-	authController.Post("login", authMiddleware, r.lo.Handle)
-
-	return nil
+	authController.Post("login", loginMiddleware, r.lo.Handle)
 }

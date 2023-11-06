@@ -1,6 +1,8 @@
 package models
 
 import (
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,6 +20,27 @@ type UsersModel struct {
 	CreatedAt    time.Time          `json:"created_at,omitempty" bson:"created_at"`
 	UpdatedAt    time.Time          `json:"updated_at,omitempty" bson:"updated_at"`
 	DeletedAt    time.Time          `json:"deleted_at,omitempty" bson:"deleted_at"`
+}
+
+func (us *UsersModel) ComparePassword(password string) (bool, error) {
+	hash := []byte(us.Password)
+	compPass := []byte(password)
+	err := bcrypt.CompareHashAndPassword(hash, compPass)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (us *UsersModel) SetPassword(password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.Wrap(err, "Generating password hash")
+	}
+	us.Password = string(hash)
+
+	return nil
 }
 
 type VerificationModel struct {
