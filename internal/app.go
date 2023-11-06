@@ -13,17 +13,17 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/google/wire"
 
-	error_handler "github.com/WildEgor/gAuth/internal/errors"
+	errorhandler "github.com/WildEgor/gAuth/internal/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 var AppSet = wire.NewSet(
 	NewApp,
-	proto.GRPCSet,
 	configs.ConfigsSet,
 	router.RouterSet,
 	db.DbSet,
 	adapters.AdaptersSet,
+	proto.RPCSet,
 )
 
 func NewApp(
@@ -31,11 +31,12 @@ func NewApp(
 	pbRouter *router.PublicRouter,
 	prRouter *router.PrivateRouter,
 	swaggerRouter *router.SwaggerRouter,
+	proxyService *proto.ProxyService,
 	mongo *db.MongoDBConnection,
 	redis *db.RedisConnection,
 ) *fiber.App {
 	app := fiber.New(fiber.Config{
-		ErrorHandler: error_handler.ErrorHandler,
+		ErrorHandler: errorhandler.ErrorHandler,
 	})
 
 	app.Use(cors.New(cors.Config{
@@ -64,6 +65,13 @@ func NewApp(
 
 	mongo.Connect()
 	redis.Connect()
+
+	// FIXME: need close server too, but not allow call it in main
+	_, err := proxyService.Init()
+	if err != nil {
+		return nil
+	}
+	// defer init.Stop()
 
 	return app
 }

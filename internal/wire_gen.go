@@ -14,6 +14,7 @@ import (
 	"github.com/WildEgor/gAuth/internal/handlers/health-check"
 	"github.com/WildEgor/gAuth/internal/handlers/login"
 	"github.com/WildEgor/gAuth/internal/handlers/registration"
+	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
@@ -37,9 +38,10 @@ func NewServer() (*fiber.App, error) {
 	changePasswordHandler := change_password_handler.NewChangePasswordHandler(keycloakAdapter, userRepository)
 	privateRouter := router.NewPrivateRouter(changePasswordHandler, keycloakAdapter, keycloakConfig, userRepository)
 	swaggerRouter := router.NewSwaggerRouter()
+	proxyService := proto.NewProxyService()
 	redisConfig := configs.NewRedisConfig(configurator)
 	redisConnection := db.NewRedisDBConnection(redisConfig)
-	app := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, mongoDBConnection, redisConnection)
+	app := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, proxyService, mongoDBConnection, redisConnection)
 	return app, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"github.com/google/wire"
 )
 
-var GRPCSet = wire.NewSet(
-	NewGRPCServer,
+var RPCSet = wire.NewSet(
+	NewGRPCService,
+	NewProxyService,
 )
