@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 
 	"github.com/WildEgor/gAuth/internal/db"
@@ -65,6 +67,31 @@ func (ur *UserRepository) FindByLogin(login string, password string) (*models.Us
 	return &us, nil
 }
 
+func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) {
+	filter := bson.D{{"_id", bson.D{{"$in", ids}}}}
+
+	cursor, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).Find(nil, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var users []models.UsersModel
+	if err = cursor.All(context.TODO(), &users); err != nil {
+		return nil, err
+	}
+
+	return &users, nil
+}
+
+func (ur *UserRepository) CountAll() (int64, error) {
+	count, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "Mongo error")
+	}
+
+	return count, nil
+}
+
 func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 	filter := bson.D{{Key: "_id", Value: id}}
 
@@ -113,14 +140,17 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 		LastName:     nu.LastName,
 		Verification: models.VerificationModel{},
 		OTP:          models.OTPModel{},
+		Status:       models.ActiveStatus,
 		CreatedAt:    time.Now().UTC(),
 		UpdatedAt:    time.Now().UTC(),
 	}
 
-	_, err = ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
+	insertResult, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
 	if err != nil {
 		return nil, errors.New(`{"mail":"need uniq mail"}`)
 	}
+
+	us.Id = insertResult.InsertedID.(primitive.ObjectID)
 
 	return us, nil
 }

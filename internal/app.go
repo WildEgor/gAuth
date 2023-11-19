@@ -31,7 +31,6 @@ func NewApp(
 	pbRouter *router.PublicRouter,
 	prRouter *router.PrivateRouter,
 	swaggerRouter *router.SwaggerRouter,
-	proxyService *proto.ProxyService,
 	mongo *db.MongoDBConnection,
 	redis *db.RedisConnection,
 ) *fiber.App {
@@ -67,7 +66,7 @@ func NewApp(
 	redis.Connect()
 
 	// FIXME: need close server too, but not allow call it in main
-	_, err := proxyService.Init()
+	_, err := proto.Init()
 	if err != nil {
 		return nil
 	}

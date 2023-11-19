@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  wire:
+    cmds:
+      - cd internal && wire
+
+  proto:
+    cmds:
+      - protoc -I ./api/proto --go_opt=module=gAuth --go_out=internal --go-grpc_opt=module=gAuth --go-grpc_out=internal api/proto/*.proto

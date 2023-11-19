@@ -8,15 +8,21 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const (
+	ActiveStatus  = "active"
+	BlockedStatus = "blocked"
+)
+
 type UsersModel struct {
-	Id           primitive.ObjectID `json:"id,omitempty" bson:"_id"`
-	FirstName    string             `json:"first_name,omitempty" bson:"first_name"`
-	LastName     string             `json:"last_name,omitempty" bson:"last_name"`
-	Email        string             `json:"email" bson:"email"`
-	Phone        string             `json:"phone" bson:"phone"`
-	Password     string             `json:"password" bson:"password"`
+	Id           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	FirstName    string             `json:"first_name" bson:"first_name"`
+	LastName     string             `json:"last_name" bson:"last_name"`
+	Email        string             `json:"email,omitempty" bson:"email"`
+	Phone        string             `json:"phone,omitempty" bson:"phone"`
+	Password     string             `json:"password,omitempty" bson:"password"`
 	Verification VerificationModel  `json:"verification,omitempty" bson:"verification"`
 	OTP          OTPModel           `json:"otp,omitempty" bson:"otp"`
+	Status       string             `json:"status,omitempty" bson:"status"`
 	CreatedAt    time.Time          `json:"created_at,omitempty" bson:"created_at"`
 	UpdatedAt    time.Time          `json:"updated_at,omitempty" bson:"updated_at"`
 	DeletedAt    time.Time          `json:"deleted_at,omitempty" bson:"deleted_at"`

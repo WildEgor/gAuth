@@ -56,7 +56,7 @@ func (h *RegistrationHandler) Handle(c *fiber.Ctx) error {
 		},
 	}
 
-	user, createErr := h.kcAdapter.CreateUser(context.Background(), keycloakUser, dto.Password, "user")
+	_, createErr := h.kcAdapter.CreateUser(context.Background(), keycloakUser, dto.Password, "user")
 	if createErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
@@ -77,7 +77,7 @@ func (h *RegistrationHandler) Handle(c *fiber.Ctx) error {
 		LastName:  dto.LastName,
 	}
 
-	_, mongoErr := h.userRepo.Create(userModel)
+	newUser, mongoErr := h.userRepo.Create(userModel)
 	if mongoErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
@@ -106,7 +106,7 @@ func (h *RegistrationHandler) Handle(c *fiber.Ctx) error {
 	c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"isOk": true,
 		"data": fiber.Map{
-			"user_id":       user.ID,
+			"user_id":       newUser.Id.Hex(),
 			"access_token":  res.AccessToken,
 			"refresh_token": res.RefreshToken,
 		},

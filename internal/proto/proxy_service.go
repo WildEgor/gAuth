@@ -3,8 +3,6 @@ package proto
 import (
 	"context"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"net"
 )
 
 type ProxyService struct{}
@@ -42,23 +40,4 @@ func (s *ProxyService) RPC(ctx context.Context, request *RPCRequest) (*RPCRespon
 
 func (s *ProxyService) mustEmbedUnimplementedCentrifugoProxyServer() {
 	panic("implement me")
-}
-
-func (s *ProxyService) Init() (*grpc.Server, error) {
-	const port = ":8088"
-	listener, err := net.Listen("tcp", port)
-	if err != nil {
-		log.Fatal("cannot listen port - ", err)
-	}
-	serv := grpc.NewServer()
-	RegisterCentrifugoProxyServer(serv, &ProxyService{})
-
-	go func() {
-		// Start gRPC server
-		if err := serv.Serve(listener); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	return serv, nil
 }
