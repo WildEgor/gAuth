@@ -1,17 +1,16 @@
 package pkg
 
 import (
-	"github.com/WildEgor/gAuth/internal/configs"
-	"github.com/WildEgor/gAuth/internal/proto"
-	"os"
-
 	"github.com/WildEgor/gAuth/internal/adapters"
+	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
+	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/google/wire"
+	"os"
 
 	errorhandler "github.com/WildEgor/gAuth/internal/errors"
 	log "github.com/sirupsen/logrus"
@@ -21,9 +20,9 @@ var AppSet = wire.NewSet(
 	NewApp,
 	configs.ConfigsSet,
 	router.RouterSet,
-	db.DbSet,
 	adapters.AdaptersSet,
 	proto.RPCSet,
+	db.DbSet,
 )
 
 func NewApp(
@@ -31,6 +30,7 @@ func NewApp(
 	pbRouter *router.PublicRouter,
 	prRouter *router.PrivateRouter,
 	swaggerRouter *router.SwaggerRouter,
+	server *proto.GRPCServer,
 	mongo *db.MongoDBConnection,
 	redis *db.RedisConnection,
 ) *fiber.App {
@@ -62,15 +62,14 @@ func NewApp(
 	pbRouter.SetupPublicRouter(app)
 	swaggerRouter.SetupSwaggerRouter(app)
 
+	// FIXME: need close server too, but not allow call it in main
+	err := server.Init()
+	if err != nil {
+		log.Panic(err)
+	}
+
 	mongo.Connect()
 	redis.Connect()
-
-	// FIXME: need close server too, but not allow call it in main
-	_, err := proto.Init()
-	if err != nil {
-		return nil
-	}
-	// defer init.Stop()
 
 	return app
 }

@@ -7,4 +7,5 @@ import (
 var RPCSet = wire.NewSet(
 	NewAuthService,
 	NewProxyService,
+	NewGRPCServer,
 )

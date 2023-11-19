@@ -19,7 +19,8 @@ func NewRedisDBConnection(
 		redisConfig,
 	}
 
-	defer conn.disconnect()
+	defer conn.Disconnect()
+
 	return conn
 }
 
@@ -40,7 +41,7 @@ func (rc *RedisConnection) Connect() {
 	log.Info("Success connect to Redis")
 }
 
-func (rc *RedisConnection) disconnect() {
+func (rc *RedisConnection) Disconnect() {
 	if rc.Client == nil {
 		return
 	}

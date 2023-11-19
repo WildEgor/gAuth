@@ -22,7 +22,8 @@ func NewMongoDBConnection(
 		mongoDbConfig,
 	}
 
-	defer conn.disconnect()
+	defer conn.Disconnect()
+
 	return conn
 }
 
@@ -38,12 +39,12 @@ func (mc *MongoDBConnection) Connect() {
 		log.Panic("Fail connect to Mongo", err)
 	}
 
-	mc.Client = client
-
 	log.Info("Success connect to MongoDB")
+
+	mc.Client = client
 }
 
-func (mc *MongoDBConnection) disconnect() {
+func (mc *MongoDBConnection) Disconnect() {
 	if mc.Client == nil {
 		return
 	}
