@@ -17,13 +17,12 @@ import (
 	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/router"
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/wire"
 )
 
 // Injectors from server.go:
 
-func NewServer() (*fiber.App, error) {
+func NewServer() (*Server, error) {
 	configurator := configs.NewConfigurator()
 	appConfig := configs.NewAppConfig(configurator)
 	healthCheckHandler := health_check_handler.NewHealthCheckHandler(appConfig)
@@ -41,8 +40,8 @@ func NewServer() (*fiber.App, error) {
 	grpcServer := proto.NewGRPCServer(appConfig)
 	redisConfig := configs.NewRedisConfig(configurator)
 	redisConnection := db.NewRedisDBConnection(redisConfig)
-	app := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoDBConnection, redisConnection)
-	return app, nil
+	server := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoDBConnection, redisConnection)
+	return server, nil
 }
 
 // server.go:

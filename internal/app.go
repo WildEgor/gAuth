@@ -25,6 +25,14 @@ var AppSet = wire.NewSet(
 	db.DbSet,
 )
 
+type Server struct {
+	App       *fiber.App
+	AppConfig *configs.AppConfig
+	GRPC      *proto.GRPCServer
+	Mongo     *db.MongoDBConnection
+	Redis     *db.RedisConnection
+}
+
 func NewApp(
 	appConfig *configs.AppConfig,
 	pbRouter *router.PublicRouter,
@@ -33,7 +41,7 @@ func NewApp(
 	server *proto.GRPCServer,
 	mongo *db.MongoDBConnection,
 	redis *db.RedisConnection,
-) *fiber.App {
+) *Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: errorhandler.ErrorHandler,
 	})
@@ -62,7 +70,6 @@ func NewApp(
 	pbRouter.SetupPublicRouter(app)
 	swaggerRouter.SetupSwaggerRouter(app)
 
-	// FIXME: need close server too, but not allow call it in main
 	err := server.Init()
 	if err != nil {
 		log.Panic(err)
@@ -71,5 +78,11 @@ func NewApp(
 	mongo.Connect()
 	redis.Connect()
 
-	return app
+	return &Server{
+		App:       app,
+		AppConfig: appConfig,
+		Redis:     redis,
+		Mongo:     mongo,
+		GRPC:      server,
+	}
 }
