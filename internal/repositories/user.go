@@ -17,16 +17,16 @@ var (
 )
 
 type UserRepository struct {
-	mongoDbConnection *db.MongoDBConnection
+	db *db.MongoDBConnection
 }
 
 func NewUserRepository(
-	mongoDbConnection *db.MongoDBConnection,
+	db *db.MongoDBConnection,
 ) *UserRepository {
-	DbName = mongoDbConnection.DbName()
+	DbName = db.DbName()
 
 	return &UserRepository{
-		mongoDbConnection,
+		db,
 	}
 }
 
@@ -34,7 +34,7 @@ func (ur *UserRepository) FindByEmail(email string) (*models.UsersModel, error) 
 	filter := bson.D{{Key: "email", Value: email}}
 
 	var us models.UsersModel
-	err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (ur *UserRepository) FindByLogin(login string, password string) (*models.Us
 		},
 	}
 	var us models.UsersModel
-	err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (ur *UserRepository) FindByLogin(login string, password string) (*models.Us
 func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) {
 	filter := bson.D{{"_id", bson.D{{"$in", ids}}}}
 
-	cursor, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).Find(nil, filter)
+	cursor, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).Find(nil, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) 
 }
 
 func (ur *UserRepository) CountAll() (int64, error) {
-	count, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, nil)
+	count, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, nil)
 	if err != nil {
 		return 0, errors.Wrap(err, "Mongo error")
 	}
@@ -93,10 +93,12 @@ func (ur *UserRepository) CountAll() (int64, error) {
 }
 
 func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
-	filter := bson.D{{Key: "_id", Value: id}}
+	oid, _ := primitive.ObjectIDFromHex(id)
+
+	filter := bson.D{{Key: "_id", Value: oid}}
 
 	var us models.UsersModel
-	err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +118,7 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 				bson.D{{"email", bson.D{{"$eq", nu.Email}}}},
 			}},
 	}
-	count, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, filter)
+	count, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "Mongo error")
 	}
@@ -145,7 +147,7 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 		UpdatedAt:    time.Now().UTC(),
 	}
 
-	insertResult, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
+	insertResult, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
 	if err != nil {
 		return nil, errors.New(`{"mail":"need uniq mail"}`)
 	}
@@ -167,7 +169,7 @@ func (ur *UserRepository) Update(nu models.UsersModel) error {
 		},
 	}
 
-	_, err := ur.mongoDbConnection.Instance().Database(DbName).Collection(models.CollectionUsers).UpdateByID(nil, nu.Id, update)
+	_, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).UpdateByID(nil, nu.Id, update)
 	if err != nil {
 		return err
 	}

@@ -6,4 +6,5 @@ import (
 
 var RepositoriesSet = wire.NewSet(
 	NewUserRepository,
+	NewTokensRepository,
 )

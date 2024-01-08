@@ -13,11 +13,11 @@ type KeycloakConfig struct {
 	API          string `env:"KEYCLOAK_URL"`
 }
 
-func NewKeycloakConfig() *KeycloakConfig {
+func NewKeycloakConfig(c *Configurator) *KeycloakConfig {
 	cfg := KeycloakConfig{}
 
 	if err := env.Parse(&cfg); err != nil {
-		log.Printf("[KeycloakConfig] %+v\n", err)
+		log.Printf("%+v\n", err)
 	}
 
 	return &cfg

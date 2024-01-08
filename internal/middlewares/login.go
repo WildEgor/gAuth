@@ -2,8 +2,10 @@ package middlewares
 
 import (
 	"errors"
+	"github.com/WildEgor/gAuth/internal/configs"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
 	"github.com/WildEgor/gAuth/internal/repositories"
+	"github.com/WildEgor/gAuth/internal/services"
 	"github.com/WildEgor/gAuth/internal/validators"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
@@ -12,7 +14,10 @@ import (
 
 type LoginMiddlewareConfig struct {
 	Filter       func(c *fiber.Ctx) bool
-	UserRepo     *repositories.UserRepository
+	UR           *repositories.UserRepository
+	TR           *repositories.TokensRepository
+	JWT          *services.JWTAuthenticator
+	JWTConfig    *configs.JWTConfig
 	Unauthorized fiber.Handler
 	Decode       func(c *fiber.Ctx) (*jwt.MapClaims, error)
 }
@@ -42,15 +47,39 @@ func configLoginDefault(config ...LoginMiddlewareConfig) LoginMiddlewareConfig {
 				return nil, errors.New("login/password required")
 			}
 
-			// TODO: impl login logic here using login and password
+			ur, err := cfg.UR.FindByLogin(payload.Login, payload.Password)
+			if err != nil {
+				return nil, errors.New("cannot find user")
+			}
+
+			at, atErr := cfg.JWT.GenerateToken(ur.Id.Hex(), cfg.JWTConfig.ATDuration)
+			if atErr != nil {
+				return nil, errors.New("cannot generate token")
+			}
+
+			rt, rtErr := cfg.JWT.GenerateToken(ur.Id.Hex(), cfg.JWTConfig.ATDuration)
+			if rtErr != nil {
+				return nil, errors.New("cannot generate token")
+			}
+
+			errAT := cfg.TR.SetAT(at)
+			if errAT != nil {
+				return nil, errors.New("cannot get token")
+			}
+			errRT := cfg.TR.SetRT(rt)
+			if errRT != nil {
+				return nil, errors.New("cannot get token")
+			}
 
 			jwtPayload := jwt.MapClaims{
-				"sub":           payload.Login,
+				"sub":           ur.Id.Hex(),
 				"typ":           "Bearer",
-				"exp":           "TODO: impl",
-				"access_token":  "TODO: impl",
-				"refresh_token": "TODO: impl",
+				"exp":           at.ExpiresIn,
+				"access_token":  at.Token,
+				"refresh_token": rt.Token,
 			}
+
+			c.Locals("access_token_uuid", at.TokenUuid)
 
 			return &jwtPayload, nil
 		}
@@ -91,7 +120,7 @@ func NewLoginMiddleware(config LoginMiddlewareConfig) fiber.Handler {
 		claims, err := cfg.Decode(c)
 		if err == nil {
 			c.Locals("jwtClaims", *claims)
-			user, err := cfg.UserRepo.FindByLogin(payload.Login, payload.Password)
+			user, err := cfg.UR.FindByLogin(payload.Login, payload.Password)
 			if err == nil {
 				c.Locals("user", *user)
 				return c.Next()

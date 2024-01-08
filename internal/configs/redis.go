@@ -6,14 +6,14 @@ import (
 )
 
 type RedisConfig struct {
-	URI string `env:"REDIS_URI"`
+	URI string `env:"REDIS_URI,required"`
 }
 
 func NewRedisConfig(c *Configurator) *RedisConfig {
 	cfg := RedisConfig{}
 
 	if err := env.Parse(&cfg); err != nil {
-		log.Printf("[RedisConfig] %+v\n", err)
+		log.Printf("%+v\n", err)
 	}
 
 	return &cfg

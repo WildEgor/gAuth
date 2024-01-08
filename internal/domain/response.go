@@ -6,3 +6,14 @@ type ErrorResponseDomain struct {
 	Message string            `json:"message"`
 	Errors  map[string]string `json:"errors"`
 }
+
+// VoidResponseDomain
+type VoidResponseDomain struct {
+	Message string `json:"message"`
+}
+
+func NewVoidResponseDomain() *VoidResponseDomain {
+	return &VoidResponseDomain{
+		Message: "success",
+	}
+}

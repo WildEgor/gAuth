@@ -12,11 +12,14 @@ import (
 	"github.com/WildEgor/gAuth/internal/handlers/change-password"
 	"github.com/WildEgor/gAuth/internal/handlers/health-check"
 	"github.com/WildEgor/gAuth/internal/handlers/login"
+	"github.com/WildEgor/gAuth/internal/handlers/logout"
+	"github.com/WildEgor/gAuth/internal/handlers/me"
 	"github.com/WildEgor/gAuth/internal/handlers/refresh"
 	"github.com/WildEgor/gAuth/internal/handlers/reg"
 	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/router"
+	"github.com/WildEgor/gAuth/internal/services"
 	"github.com/google/wire"
 )
 
@@ -29,16 +32,21 @@ func NewServer() (*Server, error) {
 	mongoDBConfig := configs.NewMongoDBConfig(configurator)
 	mongoDBConnection := db.NewMongoDBConnection(mongoDBConfig)
 	userRepository := repositories.NewUserRepository(mongoDBConnection)
-	regHandler := reg_handler.NewRegHandler(userRepository)
-	loginHandler := login_handler.NewLoginHandler(userRepository)
-	publicRouter := router.NewPublicRouter(healthCheckHandler, regHandler, loginHandler, userRepository)
-	changePasswordHandler := change_password_handler.NewChangePasswordHandler(userRepository)
-	refreshHandler := refresh_handler.NewRefreshHandler(userRepository)
-	privateRouter := router.NewPrivateRouter(changePasswordHandler, refreshHandler, userRepository)
-	swaggerRouter := router.NewSwaggerRouter()
-	grpcServer := proto.NewGRPCServer(appConfig)
 	redisConfig := configs.NewRedisConfig(configurator)
 	redisConnection := db.NewRedisDBConnection(redisConfig)
+	tokensRepository := repositories.NewTokensRepository(redisConnection)
+	jwtConfig := configs.NewJWTConfig(configurator)
+	jwtAuthenticator := services.NewJWTAuthenticator(jwtConfig)
+	regHandler := reg_handler.NewRegHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
+	loginHandler := login_handler.NewLoginHandler(userRepository, jwtConfig)
+	logoutHandler := logout_handler.NewLogoutHandler(tokensRepository, jwtAuthenticator)
+	publicRouter := router.NewPublicRouter(healthCheckHandler, regHandler, loginHandler, logoutHandler, userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
+	changePasswordHandler := change_password_handler.NewChangePasswordHandler(userRepository)
+	meHandler := me_handler.NewMeHandler(userRepository)
+	refreshHandler := refresh_handler.NewRefreshHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
+	privateRouter := router.NewPrivateRouter(changePasswordHandler, meHandler, refreshHandler, userRepository, jwtAuthenticator)
+	swaggerRouter := router.NewSwaggerRouter()
+	grpcServer := proto.NewGRPCServer(appConfig)
 	server := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoDBConnection, redisConnection)
 	return server, nil
 }

@@ -1,23 +1,34 @@
 package reg_handler
 
 import (
+	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
 	"github.com/WildEgor/gAuth/internal/models"
 	"github.com/WildEgor/gAuth/internal/repositories"
+	"github.com/WildEgor/gAuth/internal/services"
 	"github.com/WildEgor/gAuth/internal/validators"
 	"github.com/gofiber/fiber/v2"
 )
 
 type RegHandler struct {
-	userRepo *repositories.UserRepository
+	ur        *repositories.UserRepository
+	tr        *repositories.TokensRepository
+	jwt       *services.JWTAuthenticator
+	jwtConfig *configs.JWTConfig
 }
 
 func NewRegHandler(
-	userRepo *repositories.UserRepository,
+	ur *repositories.UserRepository,
+	tr *repositories.TokensRepository,
+	jwt *services.JWTAuthenticator,
+	jwtConfig *configs.JWTConfig,
 ) *RegHandler {
 	return &RegHandler{
-		userRepo: userRepo,
+		ur:        ur,
+		tr:        tr,
+		jwt:       jwt,
+		jwtConfig: jwtConfig,
 	}
 }
 
@@ -38,8 +49,22 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 		return err
 	}
 
-	// TODO
+	// 1. Check if user exists
+	eU, _ := h.ur.FindByEmail(dto.Email)
 
+	if eU != nil {
+		c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"isOk": false,
+			"data": &domains.ErrorResponseDomain{
+				Status:  "fail",
+				Message: "User already exists",
+			},
+		})
+
+		return nil
+	}
+
+	// 2. Create user of not exists
 	userModel := models.UsersModel{
 		Email:     dto.Email,
 		Phone:     dto.Phone,
@@ -48,7 +73,7 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 		LastName:  dto.LastName,
 	}
 
-	newUser, mongoErr := h.userRepo.Create(userModel)
+	newUser, mongoErr := h.ur.Create(userModel)
 	if mongoErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
@@ -61,14 +86,86 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 		return nil
 	}
 
-	c.Status(fiber.StatusCreated).JSON(fiber.Map{
+	// 3. Generate tokens
+	at, atErr := h.jwt.GenerateToken(newUser.Id.Hex(), h.jwtConfig.ATDuration)
+	if atErr != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"isOk": false,
+			"data": &domains.ErrorResponseDomain{
+				Status:  "fail",
+				Message: atErr.Error(),
+			},
+		})
+
+		return nil
+	}
+
+	rt, rtErr := h.jwt.GenerateToken(newUser.Id.Hex(), h.jwtConfig.ATDuration)
+	if rtErr != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"isOk": false,
+			"data": &domains.ErrorResponseDomain{
+				Status:  "fail",
+				Message: rtErr.Error(),
+			},
+		})
+
+		return nil
+	}
+
+	errAT := h.tr.SetAT(at)
+	if errAT != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"isOk": false,
+			"data": &domains.ErrorResponseDomain{
+				Status:  "fail",
+				Message: errAT.Error(),
+			},
+		})
+
+		return nil
+	}
+	errRT := h.tr.SetRT(rt)
+	if errRT != nil {
+		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"isOk": false,
+			"data": &domains.ErrorResponseDomain{
+				Status:  "fail",
+				Message: errRT.Error(),
+			},
+		})
+
+		return nil
+	}
+
+	// 4. Return tokens
+	//c.Cookie(&fiber.Cookie{
+	//	Name:     "access_token",
+	//	Value:    *at.Token,
+	//	Path:     "/",
+	//	MaxAge:   int(h.jwtConfig.ATDuration.Seconds()),
+	//	Secure:   false,
+	//	HTTPOnly: true,
+	//	Domain:   "localhost",
+	//})
+	//
+	//c.Cookie(&fiber.Cookie{
+	//	Name:     "refresh_token",
+	//	Value:    *rt.Token,
+	//	Path:     "/",
+	//	MaxAge:   int(h.jwtConfig.RTDuration.Seconds()),
+	//	Secure:   false,
+	//	HTTPOnly: true,
+	//	Domain:   "localhost",
+	//})
+
+	// 5. Or response with tokens
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"isOk": true,
 		"data": fiber.Map{
 			"user_id":       newUser.Id.Hex(),
-			"access_token":  "access_token",
-			"refresh_token": "refresh_token",
+			"access_token":  at.Token,
+			"refresh_token": rt.Token,
 		},
 	})
-
-	return nil
 }

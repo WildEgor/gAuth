@@ -9,13 +9,13 @@ type Configurator struct{}
 
 func NewConfigurator() *Configurator {
 	c := &Configurator{}
-	if err := c.Load(); err != nil {
-		log.Panic("[Configurator] parse error", err)
-	}
+	c.Load()
 	return c
 }
 
-func (c *Configurator) Load() error {
+func (c *Configurator) Load() {
 	err := godotenv.Load(".env", ".env.local")
-	return err
+	if err != nil {
+		log.Fatal("Error loading envs file")
+	}
 }

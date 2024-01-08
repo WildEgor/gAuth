@@ -6,26 +6,18 @@ import (
 )
 
 type AppConfig struct {
-	Port    string `env:"APP_PORT"`
-	RPCPort string `env:"GRPC_PORT"`
-	Mode    string `env:"APP_MODE"`
-	GoEnv   string `env:"GO_ENV"`
-	Version string `env:"VERSION"`
+	Port    string `env:"APP_PORT" envDefault:"8888"`
+	RPCPort string `env:"GRPC_PORT" envDefault:"8887"`
+	Mode    string `env:"APP_MODE,required"`
+	GoEnv   string `env:"GO_ENV" envDefault:"local"`
+	Version string `env:"VERSION" envDefault:"local"`
 }
 
 func NewAppConfig(c *Configurator) *AppConfig {
 	cfg := AppConfig{}
 
 	if err := env.Parse(&cfg); err != nil {
-		log.Printf("[AppConfig] %+v\n", err)
-	}
-
-	if cfg.GoEnv == "" {
-		cfg.GoEnv = "local"
-	}
-
-	if cfg.Version == "" {
-		cfg.Version = "local"
+		log.Printf("%+v\n", err)
 	}
 
 	return &cfg

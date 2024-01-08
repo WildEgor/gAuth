@@ -1,6 +1,8 @@
 package login_handler
 
 import (
+	"fmt"
+	"github.com/WildEgor/gAuth/internal/configs"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
 	"github.com/WildEgor/gAuth/internal/middlewares"
 	"github.com/WildEgor/gAuth/internal/repositories"
@@ -10,14 +12,17 @@ import (
 )
 
 type LoginHandler struct {
-	userRepo *repositories.UserRepository
+	ur        *repositories.UserRepository
+	jwtConfig *configs.JWTConfig
 }
 
 func NewLoginHandler(
-	userRepo *repositories.UserRepository,
+	ur *repositories.UserRepository,
+	jwtConfig *configs.JWTConfig,
 ) *LoginHandler {
 	return &LoginHandler{
-		userRepo: userRepo,
+		ur:        ur,
+		jwtConfig: jwtConfig,
 	}
 }
 
@@ -52,7 +57,28 @@ func (h *LoginHandler) Handle(c *fiber.Ctx) error {
 
 	authUser := middlewares.ExtractUser(c)
 
-	c.Status(fiber.StatusCreated).JSON(fiber.Map{
+	// 4. Return tokens
+	c.Cookie(&fiber.Cookie{
+		Name:     "access_token",
+		Value:    fmt.Sprintf("%s", jwtClaims["access_token"]),
+		Path:     "/",
+		MaxAge:   int(h.jwtConfig.ATDuration.Seconds()),
+		Secure:   false,
+		HTTPOnly: true,
+		Domain:   "localhost",
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "refresh_token",
+		Value:    fmt.Sprintf("%s", jwtClaims["refresh_token"]),
+		Path:     "/",
+		MaxAge:   int(h.jwtConfig.RTDuration.Seconds()),
+		Secure:   false,
+		HTTPOnly: true,
+		Domain:   "localhost",
+	})
+
+	c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"isOk": true,
 		"data": fiber.Map{
 			"user_id":       authUser.Id.Hex(),

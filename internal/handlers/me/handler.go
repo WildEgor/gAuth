@@ -1,6 +1,8 @@
 package me_handler
 
 import (
+	"github.com/WildEgor/gAuth/internal/dtos/user"
+	"github.com/WildEgor/gAuth/internal/middlewares"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,11 +21,14 @@ func NewMeHandler(
 
 func (hch *MeHandler) Handle(c *fiber.Ctx) error {
 
-	// TODO
+	authUser := middlewares.ExtractUser(c)
 
-	c.JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"isOk": true,
-		"data": nil,
+		"data": user.MeDto{
+			ID:     authUser.Id.Hex(),
+			Mobile: authUser.Phone,
+			Email:  authUser.Email,
+		},
 	})
-	return nil
 }

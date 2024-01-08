@@ -1,8 +1,8 @@
 package middlewares
 
 import (
-	"fmt"
 	"github.com/WildEgor/gAuth/internal/repositories"
+	"github.com/WildEgor/gAuth/internal/services"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/pkg/errors"
@@ -12,7 +12,8 @@ import (
 
 type AuthMiddlewareConfig struct {
 	Filter       func(c *fiber.Ctx) bool
-	UserRepo     *repositories.UserRepository
+	UR           *repositories.UserRepository
+	JWT          *services.JWTAuthenticator
 	Unauthorized fiber.Handler
 	Decode       func(c *fiber.Ctx) (*jwt.MapClaims, error)
 }
@@ -38,10 +39,10 @@ func configAuthDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 		// Set default Decode function if not passed
 		cfg.Decode = func(c *fiber.Ctx) (*jwt.MapClaims, error) {
 			var token string
-			headerValue := c.Get("authorization")
+			authHeader := c.Get("Authorization")
 
-			if len(headerValue) > 0 {
-				components := strings.SplitN(headerValue, " ", 2)
+			if len(authHeader) > 0 {
+				components := strings.SplitN(authHeader, " ", 2)
 
 				if len(components) == 2 && components[0] == "Bearer" {
 					token = components[1]
@@ -52,32 +53,20 @@ func configAuthDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 				return nil, errors.New("empty token")
 			}
 
-			parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-				// Don't forget to validate the alg is what you expect:
-				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-					return nil, errors.New(fmt.Sprintf("Unexpected signing method: %v", token.Header["alg"]))
-				}
+			// TODO: need check token in Redis too
+			claims, err := cfg.JWT.ParseToken(token)
+			jwtPayload := jwt.MapClaims{}
 
-				return "TODO PUB KEY", nil
-			})
-
-			claims, ok := parsedToken.Claims.(jwt.MapClaims)
-
-			// TODO: get user from DB
-
-			log.Info("[AuthMiddleware] token: %v", token)
-
-			var jwtPayload jwt.MapClaims
-
-			if ok && parsedToken.Valid {
-
+			if err == nil && claims != nil && claims.IsValid {
 				jwtPayload = jwt.MapClaims{
-					"sub":           "TODO USER ID",
-					"typ":           claims["typ"],
-					"exp":           claims["exp"],
-					"access_token":  token,
+					"sub":           claims.UserID,
+					"typ":           "Bearer",
+					"exp":           claims.ExpiresIn,
+					"access_token":  authHeader,
 					"refresh_token": "",
 				}
+
+				c.Locals("access_token_uuid", claims.TokenUuid)
 
 			} else {
 				return nil, errors.Wrap(err, "token validation")
@@ -114,8 +103,8 @@ func NewAuthMiddleware(config AuthMiddlewareConfig) fiber.Handler {
 		if err == nil {
 			c.Locals("jwtClaims", *claims)
 
-			email := (*claims)["sub"].(string)
-			user, err := cfg.UserRepo.FindByEmail(email)
+			id := (*claims)["sub"].(string)
+			user, err := cfg.UR.FindById(id)
 			if err == nil {
 				c.Locals("user", *user)
 				return c.Next()

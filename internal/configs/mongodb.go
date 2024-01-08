@@ -6,15 +6,15 @@ import (
 )
 
 type MongoDBConfig struct {
-	DbName string `env:"MONGODB_NAME"`
-	URI    string `env:"MONGODB_URI"`
+	DbName string `env:"MONGODB_NAME,required"`
+	URI    string `env:"MONGODB_URI,required"`
 }
 
 func NewMongoDBConfig(c *Configurator) *MongoDBConfig {
 	cfg := MongoDBConfig{}
 
 	if err := env.Parse(&cfg); err != nil {
-		log.Printf("[MongoDBConfig] %+v\n", err)
+		log.Printf("%+v\n", err)
 	}
 
 	return &cfg
