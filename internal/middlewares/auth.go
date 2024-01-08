@@ -1,29 +1,18 @@
 package middlewares
 
 import (
-	"context"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
 	"fmt"
-	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/repositories"
-	"github.com/pkg/errors"
-	"strings"
-
-	kcAdapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 type AuthMiddlewareConfig struct {
-	Filter func(c *fiber.Ctx) bool
-
-	UserRepo        *repositories.UserRepository
-	KeycloakAdapter *kcAdapter.KeycloakAdapter
-	KeycloakConfig  *configs.KeycloakConfig
-
+	Filter       func(c *fiber.Ctx) bool
+	UserRepo     *repositories.UserRepository
 	Unauthorized fiber.Handler
 	Decode       func(c *fiber.Ctx) (*jwt.MapClaims, error)
 }
@@ -63,26 +52,18 @@ func configAuthDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 				return nil, errors.New("empty token")
 			}
 
-			publicKey, err := parseKeycloakRSAPublicKey(cfg.KeycloakConfig.RSAPublicKey)
-			if err != nil {
-				return nil, errors.Wrap(err, "parse rsa error")
-			}
-
 			parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 				// Don't forget to validate the alg is what you expect:
 				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 					return nil, errors.New(fmt.Sprintf("Unexpected signing method: %v", token.Header["alg"]))
 				}
 
-				return publicKey, nil
+				return "TODO PUB KEY", nil
 			})
 
 			claims, ok := parsedToken.Claims.(jwt.MapClaims)
 
-			res, err := cfg.KeycloakAdapter.UserInfoByToken(context.Background(), token)
-			if err != nil {
-				return nil, errors.Wrap(err, "invalid token")
-			}
+			// TODO: get user from DB
 
 			log.Info("[AuthMiddleware] token: %v", token)
 
@@ -91,7 +72,7 @@ func configAuthDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 			if ok && parsedToken.Valid {
 
 				jwtPayload = jwt.MapClaims{
-					"sub":           res.Email,
+					"sub":           "TODO USER ID",
 					"typ":           claims["typ"],
 					"exp":           claims["exp"],
 					"access_token":  token,
@@ -148,20 +129,4 @@ func NewAuthMiddleware(config AuthMiddlewareConfig) fiber.Handler {
 			},
 		})
 	}
-}
-
-func parseKeycloakRSAPublicKey(base64Encoded string) (*rsa.PublicKey, error) {
-	buf, err := base64.StdEncoding.DecodeString(base64Encoded)
-	if err != nil {
-		return nil, err
-	}
-	parsedKey, err := x509.ParsePKIXPublicKey(buf)
-	if err != nil {
-		return nil, err
-	}
-	publicKey, ok := parsedKey.(*rsa.PublicKey)
-	if ok {
-		return publicKey, nil
-	}
-	return nil, fmt.Errorf("unexpected key type %T", publicKey)
 }

@@ -7,13 +7,13 @@
 package pkg
 
 import (
-	"github.com/WildEgor/gAuth/internal/adapters/keycloak"
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/handlers/change-password"
 	"github.com/WildEgor/gAuth/internal/handlers/health-check"
 	"github.com/WildEgor/gAuth/internal/handlers/login"
-	"github.com/WildEgor/gAuth/internal/handlers/registration"
+	"github.com/WildEgor/gAuth/internal/handlers/refresh"
+	"github.com/WildEgor/gAuth/internal/handlers/reg"
 	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/router"
@@ -29,13 +29,12 @@ func NewServer() (*Server, error) {
 	mongoDBConfig := configs.NewMongoDBConfig(configurator)
 	mongoDBConnection := db.NewMongoDBConnection(mongoDBConfig)
 	userRepository := repositories.NewUserRepository(mongoDBConnection)
-	keycloakConfig := configs.NewKeycloakConfig()
-	keycloakAdapter := keycloak_adapter.NewKeycloakAdapter(keycloakConfig)
-	registrationHandler := registration_handler.NewRegistrationHandler(userRepository, keycloakAdapter)
+	regHandler := reg_handler.NewRegHandler(userRepository)
 	loginHandler := login_handler.NewLoginHandler(userRepository)
-	publicRouter := router.NewPublicRouter(healthCheckHandler, registrationHandler, loginHandler, keycloakAdapter, userRepository)
-	changePasswordHandler := change_password_handler.NewChangePasswordHandler(keycloakAdapter, userRepository)
-	privateRouter := router.NewPrivateRouter(changePasswordHandler, keycloakAdapter, keycloakConfig, userRepository)
+	publicRouter := router.NewPublicRouter(healthCheckHandler, regHandler, loginHandler, userRepository)
+	changePasswordHandler := change_password_handler.NewChangePasswordHandler(userRepository)
+	refreshHandler := refresh_handler.NewRefreshHandler(userRepository)
+	privateRouter := router.NewPrivateRouter(changePasswordHandler, refreshHandler, userRepository)
 	swaggerRouter := router.NewSwaggerRouter()
 	grpcServer := proto.NewGRPCServer(appConfig)
 	redisConfig := configs.NewRedisConfig(configurator)

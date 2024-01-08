@@ -5,19 +5,14 @@ import (
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/validators"
-
-	kcAdapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 )
 
 type LoginMiddlewareConfig struct {
-	Filter func(c *fiber.Ctx) bool
-
-	UserRepo        *repositories.UserRepository
-	KeycloakAdapter *kcAdapter.KeycloakAdapter
-
+	Filter       func(c *fiber.Ctx) bool
+	UserRepo     *repositories.UserRepository
 	Unauthorized fiber.Handler
 	Decode       func(c *fiber.Ctx) (*jwt.MapClaims, error)
 }
@@ -47,26 +42,15 @@ func configLoginDefault(config ...LoginMiddlewareConfig) LoginMiddlewareConfig {
 				return nil, errors.New("login/password required")
 			}
 
-			res, err := cfg.KeycloakAdapter.Login(payload.Login, payload.Password)
-			if err != nil {
-				return nil, errors.New("email/password not authenticated")
-			}
-
-			log.Info("[AuthMiddleware] token: %v", res.AccessToken)
+			// TODO: impl login logic here using login and password
 
 			jwtPayload := jwt.MapClaims{
 				"sub":           payload.Login,
-				"typ":           res.TokenType,
-				"exp":           res.ExpiresIn,
-				"access_token":  res.AccessToken,
-				"refresh_token": res.RefreshToken,
+				"typ":           "Bearer",
+				"exp":           "TODO: impl",
+				"access_token":  "TODO: impl",
+				"refresh_token": "TODO: impl",
 			}
-
-			// FIXME: validate another payload
-			//err = jwtPayload.Valid()
-			//if err != nil {
-			//	return nil, errors.New("invalid token")
-			//}
 
 			return &jwtPayload, nil
 		}

@@ -22,9 +22,24 @@ func NewAuthService(
 }
 
 func (s *AuthService) ValidateToken(ctx context.Context, request *ValidateTokenRequest) (*UserData, error) {
-	//TODO implement me
+	token, err := s.ka.UserInfoByToken(ctx, request.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	ur, err := s.ur.FindById(token.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: add mapper
 	return &UserData{
-		Id: "123",
+		Id:        ur.Id.Hex(),
+		FirstName: ur.FirstName,
+		LastName:  ur.LastName,
+		Email:     ur.Email,
+		Phone:     ur.Phone,
+		IsActive:  true, // TODO
 	}, nil
 }
 
@@ -40,6 +55,7 @@ func (s *AuthService) FindByIds(ctx context.Context, request *FindByIdsRequest) 
 		return &response, nil
 	}
 
+	// TODO: add mapper
 	for _, model := range *users {
 		response.Users = append(response.Users, &UserData{
 			Id:        model.Id.Hex(),

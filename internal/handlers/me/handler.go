@@ -19,6 +19,8 @@ func NewMeHandler(
 
 func (hch *MeHandler) Handle(c *fiber.Ctx) error {
 
+	// TODO
+
 	c.JSON(fiber.Map{
 		"isOk": true,
 		"data": nil,

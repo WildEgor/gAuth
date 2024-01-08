@@ -1,9 +1,6 @@
 package change_password_handler
 
 import (
-	"context"
-	kcAdapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
-	domains "github.com/WildEgor/gAuth/internal/domain"
 	"github.com/WildEgor/gAuth/internal/dtos/user"
 	"github.com/WildEgor/gAuth/internal/middlewares"
 	"github.com/WildEgor/gAuth/internal/repositories"
@@ -12,16 +9,13 @@ import (
 )
 
 type ChangePasswordHandler struct {
-	ka *kcAdapter.KeycloakAdapter
 	ur *repositories.UserRepository
 }
 
 func NewChangePasswordHandler(
-	ka *kcAdapter.KeycloakAdapter,
 	ur *repositories.UserRepository,
 ) *ChangePasswordHandler {
 	return &ChangePasswordHandler{
-		ka,
 		ur,
 	}
 }
@@ -62,35 +56,19 @@ func (h *ChangePasswordHandler) Handle(c *fiber.Ctx) error {
 		return setPassErr
 	}
 
-	setErr := h.ka.UpdatePassword(context.Background(), authUser.Email, dto.NewPassword)
-	if setErr != nil {
-		return setErr
-	}
-
 	upErr := h.ur.Update(*authUser)
 	if upErr != nil {
 		return upErr
 	}
 
-	res, loginErr := h.ka.Login(authUser.Email, dto.NewPassword)
-	if loginErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: err.Error(),
-			},
-		})
-
-		return nil
-	}
+	// TODO: generate tokens pair
 
 	c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"isOk": true,
 		"data": fiber.Map{
 			"user_id":       authUser.Id.Hex(),
-			"access_token":  res.AccessToken,
-			"refresh_token": res.RefreshToken,
+			"access_token":  "access_token",
+			"refresh_token": "refresh_token",
 		},
 	})
 
