@@ -68,7 +68,13 @@ func (ur *UserRepository) FindByLogin(login string, password string) (*models.Us
 }
 
 func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) {
-	filter := bson.D{{"_id", bson.D{{"$in", ids}}}}
+
+	objectIds := make([]primitive.ObjectID, len(ids))
+	for i, id := range ids {
+		objectIds[i], _ = primitive.ObjectIDFromHex(id)
+	}
+
+	filter := bson.D{{"_id", bson.D{{"$in", objectIds}}}}
 
 	cursor, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).Find(nil, filter)
 	if err != nil {
@@ -106,7 +112,7 @@ func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 	return &us, nil
 }
 
-func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, error) {
+func (ur *UserRepository) Create(nu *models.UsersModel) (*models.UsersModel, error) {
 	var checkUser models.UsersModel
 	checkUser.Email = nu.Email
 	checkUser.Phone = nu.Phone
@@ -157,7 +163,7 @@ func (ur *UserRepository) Create(nu models.UsersModel) (*models.UsersModel, erro
 	return us, nil
 }
 
-func (ur *UserRepository) Update(nu models.UsersModel) error {
+func (ur *UserRepository) UpdatePassword(nu models.UsersModel) error {
 	nu.UpdatedAt = time.Now().UTC()
 
 	update := bson.D{

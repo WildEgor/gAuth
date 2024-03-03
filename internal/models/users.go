@@ -42,7 +42,7 @@ func (us *UsersModel) ComparePassword(password string) (bool, error) {
 func (us *UsersModel) SetPassword(password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.Wrap(err, "Generating password hash")
+		return errors.Wrap(err, "generating password hash")
 	}
 	us.Password = string(hash)
 

@@ -22,8 +22,18 @@ func main() {
 		done <- true
 	}()
 
-	log.Println("[Main] Awaiting signal")
 	srv, _ := server.NewServer()
+
+	log.Println("[Main] Starting gRPC server")
+	err := srv.GRPC.Init()
+	if err != nil {
+		log.Panic(err)
+	}
+
+	log.Println("[Main] Connect to Mongo and Redis")
+	srv.Mongo.Connect()
+	srv.Redis.Connect()
+
 	addr := ":" + srv.AppConfig.Port
 	if err := srv.App.Listen(addr); err != nil {
 		log.Panicf("[CRIT] Unable to start server. Reason: %v", err)
@@ -38,7 +48,7 @@ func main() {
 	}
 	srv.Redis.Disconnect()
 	srv.Mongo.Disconnect()
-	err := srv.App.Shutdown()
+	err = srv.App.Shutdown()
 	if err != nil {
 		return
 	}

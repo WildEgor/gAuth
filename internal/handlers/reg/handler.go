@@ -4,7 +4,7 @@ import (
 	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
-	"github.com/WildEgor/gAuth/internal/models"
+	"github.com/WildEgor/gAuth/internal/mappers"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/services"
 	"github.com/WildEgor/gAuth/internal/validators"
@@ -50,9 +50,8 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	}
 
 	// 1. Check if user exists
-	eU, _ := h.ur.FindByEmail(dto.Email)
-
-	if eU != nil {
+	existed, _ := h.ur.FindByEmail(dto.Email)
+	if existed != nil {
 		c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"isOk": false,
 			"data": &domains.ErrorResponseDomain{
@@ -65,14 +64,7 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	}
 
 	// 2. Create user of not exists
-	userModel := models.UsersModel{
-		Email:     dto.Email,
-		Phone:     dto.Phone,
-		Password:  dto.Password,
-		FirstName: dto.FirstName,
-		LastName:  dto.LastName,
-	}
-
+	userModel := mappers.CreateUser(dto)
 	newUser, mongoErr := h.ur.Create(userModel)
 	if mongoErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -88,25 +80,13 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 
 	// 3. Generate tokens
 	at, atErr := h.jwt.GenerateToken(newUser.Id.Hex(), h.jwtConfig.ATDuration)
-	if atErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: atErr.Error(),
-			},
-		})
-
-		return nil
-	}
-
 	rt, rtErr := h.jwt.GenerateToken(newUser.Id.Hex(), h.jwtConfig.ATDuration)
-	if rtErr != nil {
+	if atErr != nil || rtErr != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
 			"data": &domains.ErrorResponseDomain{
 				Status:  "fail",
-				Message: rtErr.Error(),
+				Message: "ERR: tokens", // TODO: make better
 			},
 		})
 
@@ -114,24 +94,13 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	}
 
 	errAT := h.tr.SetAT(at)
-	if errAT != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: errAT.Error(),
-			},
-		})
-
-		return nil
-	}
 	errRT := h.tr.SetRT(rt)
-	if errRT != nil {
+	if errAT != nil || errRT != nil {
 		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"isOk": false,
 			"data": &domains.ErrorResponseDomain{
 				Status:  "fail",
-				Message: errRT.Error(),
+				Message: "ERR", // TODO: make better
 			},
 		})
 

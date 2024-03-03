@@ -1,5 +1,5 @@
 # Base Stage
-FROM golang:1.20 as base
+FROM golang:1.21 as base
 ARG APP_PATH=/app
 COPY . $APP_PATH
 WORKDIR $APP_PATH
@@ -28,5 +28,4 @@ ARG APP_PATH=/root/
 WORKDIR $APP_PATH
 COPY --from=builder /app/dist/app .
 EXPOSE 8888
-RUN ls  
 CMD ["./app"]

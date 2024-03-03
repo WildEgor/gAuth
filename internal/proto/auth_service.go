@@ -2,32 +2,24 @@ package proto
 
 import (
 	"context"
-	kcAdapter "github.com/WildEgor/gAuth/internal/adapters/keycloak"
 	"github.com/WildEgor/gAuth/internal/repositories"
 )
 
 type AuthService struct {
-	ka *kcAdapter.KeycloakAdapter
 	ur *repositories.UserRepository
 }
 
 func NewAuthService(
-	ka *kcAdapter.KeycloakAdapter,
 	ur *repositories.UserRepository,
 ) *AuthService {
 	return &AuthService{
-		ka,
 		ur,
 	}
 }
 
 func (s *AuthService) ValidateToken(ctx context.Context, request *ValidateTokenRequest) (*UserData, error) {
-	token, err := s.ka.UserInfoByToken(ctx, request.Token)
-	if err != nil {
-		return nil, err
-	}
-
-	ur, err := s.ur.FindById(token.Id)
+	// TODO: impl
+	ur, err := s.ur.FindById("")
 	if err != nil {
 		return nil, err
 	}

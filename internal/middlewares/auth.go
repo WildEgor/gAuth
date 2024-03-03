@@ -43,7 +43,6 @@ func configAuthDefault(config ...AuthMiddlewareConfig) AuthMiddlewareConfig {
 
 			if len(authHeader) > 0 {
 				components := strings.SplitN(authHeader, " ", 2)
-
 				if len(components) == 2 && components[0] == "Bearer" {
 					token = components[1]
 				}

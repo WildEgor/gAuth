@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"github.com/WildEgor/gAuth/internal/adapters"
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/proto"
@@ -20,7 +19,6 @@ var AppSet = wire.NewSet(
 	NewApp,
 	configs.ConfigsSet,
 	router.RouterSet,
-	adapters.AdaptersSet,
 	proto.RPCSet,
 	db.DbSet,
 )
@@ -69,14 +67,6 @@ func NewApp(
 	prRouter.SetupPrivateRouter(app)
 	pbRouter.SetupPublicRouter(app)
 	swaggerRouter.SetupSwaggerRouter(app)
-
-	err := server.Init()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	mongo.Connect()
-	redis.Connect()
 
 	return &Server{
 		App:       app,

@@ -8,8 +8,8 @@ import (
 
 type JWTConfig struct {
 	Secret string `env:"JWT_SECRET,required"`
-	AT     int64  `env:"JWT_AT_TTL" envDefault:"3600"`
-	RT     int64  `env:"JWT_RT_TTL" envDefault:"86400"`
+	at     string `env:"JWT_AT_TTL" envDefault:"10m"`
+	rt     string `env:"JWT_RT_TTL" envDefault:"24h"`
 
 	ATDuration time.Duration `env:"-"`
 	RTDuration time.Duration `env:"-"`
@@ -22,8 +22,8 @@ func NewJWTConfig(c *Configurator) *JWTConfig {
 		log.Printf("%+v\n", err)
 	}
 
-	cfg.ATDuration = time.Duration(cfg.AT) * time.Second
-	cfg.RTDuration = time.Duration(cfg.RT) * time.Second
+	cfg.ATDuration, _ = time.ParseDuration(cfg.at)
+	cfg.RTDuration, _ = time.ParseDuration(cfg.rt)
 
 	return &cfg
 }

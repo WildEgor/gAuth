@@ -7,6 +7,6 @@ var ConfigsSet = wire.NewSet(
 	NewAppConfig,
 	NewMongoDBConfig,
 	NewRedisConfig,
-	NewKeycloakConfig,
 	NewJWTConfig,
+	NewOTPConfig,
 )
