@@ -6,7 +6,8 @@ import (
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/pquerna/otp/totp"
 	"image/png"
-	"time"
+	"math/rand"
+	"strconv"
 )
 
 var (
@@ -15,50 +16,44 @@ var (
 	ErrorGenerateQR = errors.New("failed to generate QR code")
 )
 
-type OTPGenerator struct {
-	config *configs.OTPConfig
+type CodeGenerator struct {
+	Length uint8
 }
 
-func NewOTPGenerator(
+func NewCodeGenerator(length uint8) *CodeGenerator {
+	return &CodeGenerator{
+		Length: length,
+	}
+}
+
+func (g *CodeGenerator) Generate() string {
+	num := rand.Intn(9000) + 1000
+	return strconv.Itoa(num)
+}
+
+type OTPService struct {
+	config    *configs.OTPConfig
+	generator *CodeGenerator
+}
+
+func NewOTPService(
 	config *configs.OTPConfig,
-
-) *OTPGenerator {
-	return &OTPGenerator{
-		config: config,
+) *OTPService {
+	return &OTPService{
+		config:    config,
+		generator: NewCodeGenerator(config.Length),
 	}
 }
 
-func (g *OTPGenerator) GenerateAndSMSSend(phone string) (string, error) {
-	code, err := totp.GenerateCode(g.config.Secret, time.Now())
-	if err != nil {
-		return "", ErrGenerateOTP
-	}
+func (g *OTPService) GenerateAndSMSSend(phone string) (string, error) {
+	code := g.generator.Generate()
 
-	// TODO: impl
-	//err = g.smsSender.Send(phone, code)
-	//if err != nil {
-	//	return "", ErrSendSMS
-	//}
+	// TODO: send SMS
 
 	return code, nil
 }
 
-func (g *OTPGenerator) GenerateAndEmailSend(email string) (string, error) {
-	code, err := totp.GenerateCode(g.config.Secret, time.Now())
-	if err != nil {
-		return "", ErrGenerateOTP
-	}
-
-	// TODO: impl
-	//err = g.emailSender.Send(email, code)
-	//if err != nil {
-	//	return "", ErrSendSMS
-	//}
-
-	return code, nil
-}
-
-func (g *OTPGenerator) GenerateQR(identity string) (bytes.Buffer, error) {
+func (g *OTPService) GenerateQR(identity string) (bytes.Buffer, error) {
 	var buf bytes.Buffer
 
 	key, err := totp.Generate(totp.GenerateOpts{

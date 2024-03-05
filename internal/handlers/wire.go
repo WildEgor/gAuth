@@ -6,6 +6,8 @@ import (
 	login_handler "github.com/WildEgor/gAuth/internal/handlers/login"
 	logout_handler "github.com/WildEgor/gAuth/internal/handlers/logout"
 	me_handler "github.com/WildEgor/gAuth/internal/handlers/me"
+	otp_generate_handler "github.com/WildEgor/gAuth/internal/handlers/otp-generate"
+	otp_login_handler "github.com/WildEgor/gAuth/internal/handlers/otp-login"
 	refresh_handler "github.com/WildEgor/gAuth/internal/handlers/refresh"
 	registration_handler "github.com/WildEgor/gAuth/internal/handlers/reg"
 	"github.com/WildEgor/gAuth/internal/repositories"
@@ -23,4 +25,6 @@ var HandlersSet = wire.NewSet(
 	login_handler.NewLoginHandler,
 	logout_handler.NewLogoutHandler,
 	change_password_handler.NewChangePasswordHandler,
+	otp_generate_handler.NewOTPGenHandler,
+	otp_login_handler.NewOTPLoginHandler,
 )

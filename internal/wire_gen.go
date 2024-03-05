@@ -8,12 +8,15 @@ package pkg
 
 import (
 	"github.com/WildEgor/gAuth/internal/configs"
-	"github.com/WildEgor/gAuth/internal/db"
+	"github.com/WildEgor/gAuth/internal/db/mongo"
+	"github.com/WildEgor/gAuth/internal/db/redis"
 	"github.com/WildEgor/gAuth/internal/handlers/change-password"
 	"github.com/WildEgor/gAuth/internal/handlers/health-check"
 	"github.com/WildEgor/gAuth/internal/handlers/login"
 	"github.com/WildEgor/gAuth/internal/handlers/logout"
 	"github.com/WildEgor/gAuth/internal/handlers/me"
+	"github.com/WildEgor/gAuth/internal/handlers/otp-generate"
+	"github.com/WildEgor/gAuth/internal/handlers/otp-login"
 	"github.com/WildEgor/gAuth/internal/handlers/refresh"
 	"github.com/WildEgor/gAuth/internal/handlers/reg"
 	"github.com/WildEgor/gAuth/internal/proto"
@@ -30,24 +33,28 @@ func NewServer() (*Server, error) {
 	appConfig := configs.NewAppConfig(configurator)
 	healthCheckHandler := health_check_handler.NewHealthCheckHandler(appConfig)
 	mongoDBConfig := configs.NewMongoDBConfig(configurator)
-	mongoDBConnection := db.NewMongoDBConnection(mongoDBConfig)
-	userRepository := repositories.NewUserRepository(mongoDBConnection)
+	mongoConnection := mongo.NewMongoConnection(mongoDBConfig)
+	userRepository := repositories.NewUserRepository(mongoConnection)
 	redisConfig := configs.NewRedisConfig(configurator)
-	redisConnection := db.NewRedisDBConnection(redisConfig)
+	redisConnection := redis.NewRedisDBConnection(redisConfig)
 	tokensRepository := repositories.NewTokensRepository(redisConnection)
 	jwtConfig := configs.NewJWTConfig(configurator)
 	jwtAuthenticator := services.NewJWTAuthenticator(jwtConfig)
 	regHandler := reg_handler.NewRegHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
 	loginHandler := login_handler.NewLoginHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
 	logoutHandler := logout_handler.NewLogoutHandler(tokensRepository, jwtAuthenticator)
-	publicRouter := router.NewPublicRouter(healthCheckHandler, regHandler, loginHandler, logoutHandler, userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
+	otpConfig := configs.NewOTPConfig(configurator)
+	otpService := services.NewOTPService(otpConfig)
+	otpGenHandler := otp_generate_handler.NewOTPGenHandler(userRepository, otpService)
+	otpLoginHandler := otp_login_handler.NewOTPLoginHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
+	publicRouter := router.NewPublicRouter(healthCheckHandler, regHandler, loginHandler, logoutHandler, otpGenHandler, otpLoginHandler, userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
 	changePasswordHandler := change_password_handler.NewChangePasswordHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
 	meHandler := me_handler.NewMeHandler(userRepository)
 	refreshHandler := refresh_handler.NewRefreshHandler(userRepository, tokensRepository, jwtAuthenticator, jwtConfig)
 	privateRouter := router.NewPrivateRouter(changePasswordHandler, meHandler, refreshHandler, userRepository, jwtAuthenticator)
 	swaggerRouter := router.NewSwaggerRouter()
 	grpcServer := proto.NewGRPCServer(appConfig)
-	server := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoDBConnection, redisConnection)
+	server := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoConnection, redisConnection)
 	return server, nil
 }
 

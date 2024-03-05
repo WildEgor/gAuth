@@ -3,6 +3,8 @@ package pkg
 import (
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
+	"github.com/WildEgor/gAuth/internal/db/mongo"
+	"github.com/WildEgor/gAuth/internal/db/redis"
 	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
@@ -27,8 +29,8 @@ type Server struct {
 	App       *fiber.App
 	AppConfig *configs.AppConfig
 	GRPC      *proto.GRPCServer
-	Mongo     *db.MongoDBConnection
-	Redis     *db.RedisConnection
+	Mongo     *mongo.MongoConnection
+	Redis     *redis.RedisConnection
 }
 
 func NewApp(
@@ -37,8 +39,8 @@ func NewApp(
 	prRouter *router.PrivateRouter,
 	swaggerRouter *router.SwaggerRouter,
 	server *proto.GRPCServer,
-	mongo *db.MongoDBConnection,
-	redis *db.RedisConnection,
+	mongo *mongo.MongoConnection,
+	redis *redis.RedisConnection,
 ) *Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: errorhandler.ErrorHandler,

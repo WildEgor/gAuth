@@ -1,10 +1,12 @@
 package db
 
 import (
+	"github.com/WildEgor/gAuth/internal/db/mongo"
+	"github.com/WildEgor/gAuth/internal/db/redis"
 	"github.com/google/wire"
 )
 
 var DbSet = wire.NewSet(
-	NewMongoDBConnection,
-	NewRedisDBConnection,
+	mongo.NewMongoConnection,
+	redis.NewRedisDBConnection,
 )

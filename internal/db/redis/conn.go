@@ -1,4 +1,4 @@
-package db
+package redis
 
 import (
 	"github.com/WildEgor/gAuth/internal/configs"
@@ -19,7 +19,7 @@ func NewRedisDBConnection(
 		redisConfig,
 	}
 
-	defer conn.Disconnect()
+	conn.Connect()
 
 	return conn
 }

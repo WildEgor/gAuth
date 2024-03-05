@@ -2,21 +2,21 @@ package repositories
 
 import (
 	"fmt"
-	"github.com/WildEgor/gAuth/internal/db"
+	"github.com/WildEgor/gAuth/internal/db/redis"
 	"github.com/WildEgor/gAuth/internal/models"
 	"github.com/pkg/errors"
 	"time"
 )
 
 type TokensRepository struct {
-	db *db.RedisConnection
+	db *redis.RedisConnection
 }
 
 const rtPrefix = "refresh_token:"
 const atPrefix = "access_token:"
 
 func NewTokensRepository(
-	db *db.RedisConnection,
+	db *redis.RedisConnection,
 ) *TokensRepository {
 	return &TokensRepository{
 		db,
