@@ -7,6 +7,7 @@
 package pkg
 
 import (
+	"github.com/WildEgor/gAuth/internal/adapters"
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db/mongo"
 	"github.com/WildEgor/gAuth/internal/db/redis"
@@ -54,7 +55,9 @@ func NewServer() (*Server, error) {
 	privateRouter := router.NewPrivateRouter(changePasswordHandler, meHandler, refreshHandler, userRepository, jwtAuthenticator)
 	swaggerRouter := router.NewSwaggerRouter()
 	grpcServer := proto.NewGRPCServer(appConfig)
-	server := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoConnection, redisConnection)
+	notifierConfig := configs.NewNotifierConfig(configurator)
+	notifier := adapters.NewNotifierAdapter(notifierConfig)
+	server := NewApp(appConfig, publicRouter, privateRouter, swaggerRouter, grpcServer, mongoConnection, redisConnection, notifier)
 	return server, nil
 }
 

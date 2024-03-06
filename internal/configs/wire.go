@@ -9,4 +9,5 @@ var ConfigsSet = wire.NewSet(
 	NewRedisConfig,
 	NewJWTConfig,
 	NewOTPConfig,
+	NewNotifierConfig,
 )

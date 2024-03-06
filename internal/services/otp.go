@@ -3,6 +3,8 @@ package services
 import (
 	"bytes"
 	"errors"
+	"github.com/WildEgor/g-core/pkg/libs/notifier"
+	"github.com/WildEgor/gAuth/internal/adapters"
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/pquerna/otp/totp"
 	"image/png"
@@ -34,6 +36,7 @@ func (g *CodeGenerator) Generate() string {
 type OTPService struct {
 	config    *configs.OTPConfig
 	generator *CodeGenerator
+	notifier  *adapters.Notifier
 }
 
 func NewOTPService(
@@ -48,7 +51,12 @@ func NewOTPService(
 func (g *OTPService) GenerateAndSMSSend(phone string) (string, error) {
 	code := g.generator.Generate()
 
-	// TODO: send SMS
+	bldr := notifier.NotificationBuilder{}
+	n := bldr.AsPhone().WithText("Your code: " + code).WithPhone(phone).Build()
+	err := g.notifier.Notify(n)
+	if err != nil {
+		return "", ErrSendSMS
+	}
 
 	return code, nil
 }

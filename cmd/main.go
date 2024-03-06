@@ -48,8 +48,12 @@ func main() {
 	}
 	srv.Redis.Disconnect()
 	srv.Mongo.Disconnect()
-	err = srv.App.Shutdown()
-	if err != nil {
-		return
+
+	if srv.Notifier.Close() != nil {
+		log.Panicf("[CRIT] Unable to close notifier. Reason: %v", err)
+	}
+
+	if err := srv.App.Shutdown(); err != nil {
+		log.Panicf("[CRIT] Unable to shutdown server. Reason: %v", err)
 	}
 }
