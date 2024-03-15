@@ -1,6 +1,7 @@
 package otp_generate_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	userDtos "github.com/WildEgor/gAuth/internal/dtos/user"
 	"github.com/WildEgor/gAuth/internal/validators"
 	"github.com/gofiber/fiber/v2"
@@ -19,18 +20,19 @@ func (h *UpdateProfileHandler) Handle(c *fiber.Ctx) error {
 		return err
 	}
 
-	// TODO: impl update profile logic here
+	resp := core_dtos.InitResponse()
 
-	c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"isOk": true,
-		"data": fiber.Map{
-			"id":         dto.FirstName,
-			"email":      "",
-			"phone":      "",
-			"first_name": "",
-			"last_name":  "",
-		},
+	resp.SetStatus(c, fiber.StatusOK)
+	resp.SetData(fiber.Map{
+		"id":         dto.FirstName,
+		"email":      "",
+		"phone":      "",
+		"first_name": "",
+		"last_name":  "",
 	})
+	resp.FormResponse()
+
+	// TODO: impl update profile logic here
 
 	return nil
 }

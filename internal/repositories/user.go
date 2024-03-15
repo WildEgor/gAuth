@@ -2,39 +2,37 @@ package repositories
 
 import (
 	"context"
+	mongo2 "github.com/WildEgor/gAuth/internal/db/mongo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 
-	"github.com/WildEgor/gAuth/internal/db"
 	"github.com/WildEgor/gAuth/internal/models"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	DbName = "auth"
-)
-
 type UserRepository struct {
-	db *db.MongoDBConnection
+	coll *mongo.Collection
 }
 
 func NewUserRepository(
-	db *db.MongoDBConnection,
+	db *mongo2.MongoConnection,
 ) *UserRepository {
-	DbName = db.DbName()
+
+	coll := db.AuthDB().Collection(models.CollectionUsers)
 
 	return &UserRepository{
-		db,
+		coll,
 	}
 }
 
-func (ur *UserRepository) FindByEmail(email string) (*models.UsersModel, error) {
-	filter := bson.D{{Key: "email", Value: email}}
+func (ur *UserRepository) FindByPhone(phone string) (*models.UsersModel, error) {
+	filter := bson.D{{Key: "phone", Value: phone}}
 
 	var us models.UsersModel
-	err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +40,19 @@ func (ur *UserRepository) FindByEmail(email string) (*models.UsersModel, error) 
 	return &us, nil
 }
 
-func (ur *UserRepository) FindByLogin(login string, password string) (*models.UsersModel, error) {
+func (ur *UserRepository) FindByEmail(email string) (*models.UsersModel, error) {
+	filter := bson.D{{Key: "email", Value: email}}
+
+	var us models.UsersModel
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
+	if err != nil {
+		return nil, err
+	}
+
+	return &us, nil
+}
+
+func (ur *UserRepository) FindByLogin(login string) (*models.UsersModel, error) {
 	filter := bson.D{
 		{"$or",
 			bson.A{
@@ -52,14 +62,7 @@ func (ur *UserRepository) FindByLogin(login string, password string) (*models.Us
 		},
 	}
 	var us models.UsersModel
-	err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
-	if err != nil {
-		return nil, err
-	}
-
-	hash := []byte(us.Password)
-	compPass := []byte(password)
-	err = bcrypt.CompareHashAndPassword(hash, compPass)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +79,7 @@ func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) 
 
 	filter := bson.D{{"_id", bson.D{{"$in", objectIds}}}}
 
-	cursor, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).Find(nil, filter)
+	cursor, err := ur.coll.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +93,7 @@ func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) 
 }
 
 func (ur *UserRepository) CountAll() (int64, error) {
-	count, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, nil)
+	count, err := ur.coll.CountDocuments(context.TODO(), nil)
 	if err != nil {
 		return 0, errors.Wrap(err, "Mongo error")
 	}
@@ -104,7 +107,7 @@ func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 	filter := bson.D{{Key: "_id", Value: oid}}
 
 	var us models.UsersModel
-	err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).FindOne(nil, filter).Decode(&us)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +127,7 @@ func (ur *UserRepository) Create(nu *models.UsersModel) (*models.UsersModel, err
 				bson.D{{"email", bson.D{{"$eq", nu.Email}}}},
 			}},
 	}
-	count, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).CountDocuments(nil, filter)
+	count, err := ur.coll.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "Mongo error")
 	}
@@ -153,7 +156,7 @@ func (ur *UserRepository) Create(nu *models.UsersModel) (*models.UsersModel, err
 		UpdatedAt:    time.Now().UTC(),
 	}
 
-	insertResult, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).InsertOne(nil, us)
+	insertResult, err := ur.coll.InsertOne(context.TODO(), us)
 	if err != nil {
 		return nil, errors.New(`{"mail":"need uniq mail"}`)
 	}
@@ -175,7 +178,25 @@ func (ur *UserRepository) UpdatePassword(nu models.UsersModel) error {
 		},
 	}
 
-	_, err := ur.db.Instance().Database(DbName).Collection(models.CollectionUsers).UpdateByID(nil, nu.Id, update)
+	_, err := ur.coll.UpdateByID(context.TODO(), nu.Id, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ur *UserRepository) UpdateOTP(id primitive.ObjectID, otp models.OTPModel) error {
+	update := bson.D{
+		{"$set",
+			bson.D{
+				{"otp", otp},
+				{"updated_at", time.Now().UTC()},
+			},
+		},
+	}
+
+	_, err := ur.coll.UpdateByID(context.TODO(), id, update)
 	if err != nil {
 		return err
 	}

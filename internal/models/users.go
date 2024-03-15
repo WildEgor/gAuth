@@ -49,6 +49,46 @@ func (us *UsersModel) SetPassword(password string) error {
 	return nil
 }
 
+func (us *UsersModel) IsResendAvailable() bool {
+	// TODO: implement
+	return true
+}
+
+func (us *UsersModel) VerifyOTP(phone string, code string) bool {
+
+	if us.OTP.Identity != phone {
+		return false
+	}
+
+	if us.OTP.Code != code {
+		return false
+	}
+
+	if us.OTP.ExpireAt.Before(time.Now()) {
+		return false
+	}
+
+	return true
+}
+
+func (us *UsersModel) ClearOTP() {
+	us.OTP = OTPModel{}
+}
+
+func (us *UsersModel) IsEmailIdentity(identity string) bool {
+	return us.Email == identity
+}
+
+func (us *UsersModel) IsPhoneIdentity(identity string) bool {
+	return us.Phone == identity
+}
+
+func (us *UsersModel) UpdateOTP(identity string, code string) {
+	us.OTP.Identity = identity
+	us.OTP.Code = code
+	us.OTP.ExpireAt = time.Now().Add(time.Minute * 5)
+}
+
 type VerificationModel struct {
 	NewPhone     string    `json:"new_phone" bson:"new_phone"`
 	NewPhoneCode string    `json:"new_phone_code" bson:"new_phone_code"`
@@ -59,6 +99,7 @@ type VerificationModel struct {
 }
 
 type OTPModel struct {
-	Identity string `json:"identity" bson:"identity"`
-	Code     string `json:"code" bson:"code"`
+	Identity string    `json:"identity" bson:"identity"`
+	Code     string    `json:"code" bson:"code"`
+	ExpireAt time.Time `json:"expire_at" bson:"expire_at"`
 }

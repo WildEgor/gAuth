@@ -1,6 +1,7 @@
 package login_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
@@ -50,14 +51,15 @@ func (h *LoginHandler) Handle(c *fiber.Ctx) error {
 		return err
 	}
 
+	resp := core_dtos.InitResponse()
+
 	jwtClaims := c.Locals("jwtClaims").(jwt.MapClaims)
 	if jwtClaims == nil {
-		c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"isOk": true,
-			"data": fiber.Map{
-				"message": "Not authorized",
-			},
+		resp.SetStatus(c, fiber.StatusForbidden)
+		resp.SetData(fiber.Map{
+			"message": "Not authorized",
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -89,13 +91,12 @@ func (h *LoginHandler) Handle(c *fiber.Ctx) error {
 	at, atErr := h.jwt.GenerateToken(authUser.Id.Hex(), h.jwtConfig.ATDuration)
 	rt, rtErr := h.jwt.GenerateToken(authUser.Id.Hex(), h.jwtConfig.ATDuration)
 	if atErr != nil || rtErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "ERR: tokens", // TODO: make better
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "ERR: tokens", // TODO: make better
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -103,25 +104,23 @@ func (h *LoginHandler) Handle(c *fiber.Ctx) error {
 	errAT := h.tr.SetAT(at)
 	errRT := h.tr.SetRT(rt)
 	if errAT != nil || errRT != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "ERR", // TODO: make better
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "ERR", // TODO: make better
 		})
+		resp.FormResponse()
 
 		return nil
 	}
 
-	c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"isOk": true,
-		"data": fiber.Map{
-			"user_id":       authUser.Id.Hex(),
-			"access_token":  at.Token,
-			"refresh_token": rt.Token,
-		},
+	resp.SetStatus(c, fiber.StatusOK)
+	resp.SetData(fiber.Map{
+		"user_id":       authUser.Id.Hex(),
+		"access_token":  at.Token,
+		"refresh_token": rt.Token,
 	})
+	resp.FormResponse()
 
 	return nil
 }

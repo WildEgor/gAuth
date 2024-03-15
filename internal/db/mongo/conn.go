@@ -1,4 +1,4 @@
-package db
+package mongo
 
 import (
 	"context"
@@ -9,25 +9,25 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type MongoDBConnection struct {
+type MongoConnection struct {
 	Client        *mongo.Client
 	mongoDbConfig *configs.MongoDBConfig
 }
 
-func NewMongoDBConnection(
+func NewMongoConnection(
 	mongoDbConfig *configs.MongoDBConfig,
-) *MongoDBConnection {
-	conn := &MongoDBConnection{
+) *MongoConnection {
+	conn := &MongoConnection{
 		nil,
 		mongoDbConfig,
 	}
 
-	defer conn.Disconnect()
+	conn.Connect()
 
 	return conn
 }
 
-func (mc *MongoDBConnection) Connect() {
+func (mc *MongoConnection) Connect() {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mc.mongoDbConfig.URI))
 	if err != nil {
 		log.Panic("Fail connect to Mongo", err)
@@ -44,7 +44,7 @@ func (mc *MongoDBConnection) Connect() {
 	mc.Client = client
 }
 
-func (mc *MongoDBConnection) Disconnect() {
+func (mc *MongoConnection) Disconnect() {
 	if mc.Client == nil {
 		return
 	}
@@ -58,10 +58,6 @@ func (mc *MongoDBConnection) Disconnect() {
 	log.Info("Connection to MongoDB closed.")
 }
 
-func (mc *MongoDBConnection) Instance() *mongo.Client {
-	return mc.Client
-}
-
-func (mc *MongoDBConnection) DbName() string {
-	return mc.mongoDbConfig.DbName
+func (mc *MongoConnection) AuthDB() *mongo.Database {
+	return mc.Client.Database(mc.mongoDbConfig.DbName)
 }

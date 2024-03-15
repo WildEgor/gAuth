@@ -1,6 +1,7 @@
 package health_check_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	"github.com/gofiber/fiber/v2"
@@ -19,13 +20,13 @@ func NewHealthCheckHandler(
 }
 
 func (hch *HealthCheckHandler) Handle(c *fiber.Ctx) error {
-	c.JSON(fiber.Map{
-		"isOk": true,
-		"data": &domains.StatusDomain{
-			Status:      "ok",
-			Version:     hch.appConfig.Version,
-			Environment: hch.appConfig.GoEnv,
-		},
+	resp := core_dtos.InitResponse()
+	resp.SetStatus(c, fiber.StatusOK)
+	resp.SetData(&domains.StatusDomain{
+		Status:      "ok",
+		Version:     hch.appConfig.Version,
+		Environment: hch.appConfig.GoEnv,
 	})
+	resp.FormResponse()
 	return nil
 }

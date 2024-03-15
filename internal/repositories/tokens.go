@@ -2,21 +2,21 @@ package repositories
 
 import (
 	"fmt"
-	"github.com/WildEgor/gAuth/internal/db"
+	"github.com/WildEgor/gAuth/internal/db/redis"
 	"github.com/WildEgor/gAuth/internal/models"
 	"github.com/pkg/errors"
 	"time"
 )
 
 type TokensRepository struct {
-	db *db.RedisConnection
+	db *redis.RedisConnection
 }
 
 const rtPrefix = "refresh_token:"
 const atPrefix = "access_token:"
 
 func NewTokensRepository(
-	db *db.RedisConnection,
+	db *redis.RedisConnection,
 ) *TokensRepository {
 	return &TokensRepository{
 		db,
@@ -24,7 +24,7 @@ func NewTokensRepository(
 }
 
 func (tr *TokensRepository) SetRT(token *models.TokenDetails) error {
-	err := tr.db.Client.Set(fmt.Sprintf("%s%s", rtPrefix, token.TokenUuid), token.UserID, time.Unix(token.ExpiresIn, 0).Sub(time.Now())).Err()
+	err := tr.db.Client.Set(fmt.Sprintf("%s%s", rtPrefix, token.TokenUuid), token.UserID, time.Until(time.Unix(token.ExpiresIn, 0))).Err()
 	if err != nil {
 		return errors.Wrap(err, "set refresh token")
 	}
@@ -42,7 +42,7 @@ func (tr *TokensRepository) GetRT(tokenUuid string) (string, error) {
 }
 
 func (tr *TokensRepository) SetAT(token *models.TokenDetails) error {
-	err := tr.db.Client.Set(fmt.Sprintf("%s%s", atPrefix, token.TokenUuid), token.UserID, time.Unix(token.ExpiresIn, 0).Sub(time.Now())).Err()
+	err := tr.db.Client.Set(fmt.Sprintf("%s%s", atPrefix, token.TokenUuid), token.UserID, time.Until(time.Unix(token.ExpiresIn, 0))).Err()
 	if err != nil {
 		return errors.Wrap(err, "set access token")
 	}

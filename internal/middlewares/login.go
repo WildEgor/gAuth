@@ -47,9 +47,18 @@ func configLoginDefault(config ...LoginMiddlewareConfig) LoginMiddlewareConfig {
 				return nil, errors.New("login/password required")
 			}
 
-			ur, err := cfg.UR.FindByLogin(payload.Login, payload.Password)
+			ur, err := cfg.UR.FindByLogin(payload.Login)
 			if err != nil {
 				return nil, errors.New("cannot find user")
+			}
+
+			isEqual, err := ur.ComparePassword(payload.Password)
+			if err != nil {
+				return nil, err
+			}
+
+			if !isEqual {
+				return nil, errors.New("malformed password")
 			}
 
 			at, atErr := cfg.JWT.GenerateToken(ur.Id.Hex(), cfg.JWTConfig.ATDuration)
@@ -120,7 +129,8 @@ func NewLoginMiddleware(config LoginMiddlewareConfig) fiber.Handler {
 		claims, err := cfg.Decode(c)
 		if err == nil {
 			c.Locals("jwtClaims", *claims)
-			user, err := cfg.UR.FindByLogin(payload.Login, payload.Password)
+			// TODO: REFACTOR!!!
+			user, err := cfg.UR.FindByLogin(payload.Login)
 			if err == nil {
 				c.Locals("user", *user)
 				return c.Next()

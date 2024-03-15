@@ -6,8 +6,8 @@ import (
 )
 
 type OTPConfig struct {
-	Issuer string `env:"OTP_ISSUER,required"`
-	Secret string `env:"OTP_SECRET,required"`
+	Issuer string `env:"OTP_ISSUER" envDefault:"gAuth"`
+	Length uint8  `env:"OTP_LENGTH" envDefault:"6"`
 }
 
 func NewOTPConfig(c *Configurator) *OTPConfig {

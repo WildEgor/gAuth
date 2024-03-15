@@ -6,5 +6,5 @@ import (
 
 var ServicesSet = wire.NewSet(
 	NewJWTAuthenticator,
-	NewOTPGenerator,
+	NewOTPService,
 )

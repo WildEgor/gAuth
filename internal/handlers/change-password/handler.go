@@ -1,6 +1,7 @@
 package change_password_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	"github.com/WildEgor/gAuth/internal/dtos/user"
@@ -49,16 +50,18 @@ func (h *ChangePasswordHandler) Handle(c *fiber.Ctx) error {
 		return err
 	}
 
+	resp := core_dtos.InitResponse()
+
 	authUser := middlewares.ExtractUser(c)
 
 	_, cmpErr := authUser.ComparePassword(dto.OldPassword)
 	if cmpErr != nil {
-		c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"isOk": false,
-			"data": fiber.Map{
-				"message": "Invalid password",
-			},
+		resp.SetStatus(c, fiber.StatusOK)
+		resp.SetData(fiber.Map{
+			"message": "Invalid password",
 		})
+
+		resp.FormResponse()
 
 		return cmpErr
 	}
@@ -77,13 +80,13 @@ func (h *ChangePasswordHandler) Handle(c *fiber.Ctx) error {
 	at, atErr := h.jwt.GenerateToken(authUser.Id.Hex(), h.jwtConfig.ATDuration)
 	rt, rtErr := h.jwt.GenerateToken(authUser.Id.Hex(), h.jwtConfig.ATDuration)
 	if atErr != nil || rtErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "ERR: tokens", // TODO: make better
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "ERR: tokens", // TODO: make better
 		})
+
+		resp.FormResponse()
 
 		return nil
 	}
@@ -91,25 +94,25 @@ func (h *ChangePasswordHandler) Handle(c *fiber.Ctx) error {
 	errAT := h.tr.SetAT(at)
 	errRT := h.tr.SetRT(rt)
 	if errAT != nil || errRT != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "ERR", // TODO: make better
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "ERR", // TODO: make better
 		})
+
+		resp.FormResponse()
 
 		return nil
 	}
 
-	c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"isOk": true,
-		"data": fiber.Map{
-			"user_id":       authUser.Id.Hex(),
-			"access_token":  at.Token,
-			"refresh_token": rt.Token,
-		},
+	resp.SetStatus(c, fiber.StatusCreated)
+	resp.SetData(fiber.Map{
+		"user_id":       authUser.Id.Hex(),
+		"access_token":  at.Token,
+		"refresh_token": rt.Token,
 	})
+
+	resp.FormResponse()
 
 	return nil
 }

@@ -1,8 +1,11 @@
 package pkg
 
 import (
+	"github.com/WildEgor/gAuth/internal/adapters"
 	"github.com/WildEgor/gAuth/internal/configs"
 	"github.com/WildEgor/gAuth/internal/db"
+	"github.com/WildEgor/gAuth/internal/db/mongo"
+	"github.com/WildEgor/gAuth/internal/db/redis"
 	"github.com/WildEgor/gAuth/internal/proto"
 	"github.com/WildEgor/gAuth/internal/router"
 	"github.com/gofiber/fiber/v2"
@@ -19,6 +22,7 @@ var AppSet = wire.NewSet(
 	NewApp,
 	configs.ConfigsSet,
 	router.RouterSet,
+	adapters.AdaptersSet,
 	proto.RPCSet,
 	db.DbSet,
 )
@@ -27,8 +31,9 @@ type Server struct {
 	App       *fiber.App
 	AppConfig *configs.AppConfig
 	GRPC      *proto.GRPCServer
-	Mongo     *db.MongoDBConnection
-	Redis     *db.RedisConnection
+	Mongo     *mongo.MongoConnection
+	Redis     *redis.RedisConnection
+	Notifier  *adapters.Notifier
 }
 
 func NewApp(
@@ -37,8 +42,9 @@ func NewApp(
 	prRouter *router.PrivateRouter,
 	swaggerRouter *router.SwaggerRouter,
 	server *proto.GRPCServer,
-	mongo *db.MongoDBConnection,
-	redis *db.RedisConnection,
+	mongo *mongo.MongoConnection,
+	redis *redis.RedisConnection,
+	notifier *adapters.Notifier,
 ) *Server {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: errorhandler.ErrorHandler,
@@ -73,6 +79,7 @@ func NewApp(
 		AppConfig: appConfig,
 		Redis:     redis,
 		Mongo:     mongo,
+		Notifier:  notifier,
 		GRPC:      server,
 	}
 }
