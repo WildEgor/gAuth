@@ -21,12 +21,15 @@ services:
     hostname: auth
     restart: unless-stopped
     build:
+      args:
+        - GITHUB_TOKEN=${GITHUB_TOKEN}
       context: .
       dockerfile: Dockerfile
       target: production
     env_file:
       ./.env
     volumes:
-      - .:/app
+      - ./.env:/app/.env
     ports:
       - "8888:8888"
+    # command: tail -f /dev/null
