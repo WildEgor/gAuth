@@ -1,6 +1,7 @@
 package logout_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	"github.com/WildEgor/gAuth/internal/repositories"
 	"github.com/WildEgor/gAuth/internal/services"
@@ -31,28 +32,28 @@ func NewLogoutHandler(
 // @Produce json
 // @Router /v1/auth/logout [post]
 func (h *LogoutHandler) Handle(c *fiber.Ctx) error {
+	resp := core_dtos.InitResponse()
+
 	rt := c.Cookies("refresh_token")
 	if rt == "" {
-		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "Refresh token is required",
-			},
+		resp.SetStatus(c, fiber.StatusBadRequest)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "Refresh token is required",
 		})
+		resp.FormResponse()
 
 		return nil
 	}
 
 	token, err := h.jwt.ParseToken(string(rt[:]))
 	if err != nil {
-		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: err.Error(),
-			},
+		resp.SetStatus(c, fiber.StatusBadRequest)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: err.Error(),
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -60,23 +61,23 @@ func (h *LogoutHandler) Handle(c *fiber.Ctx) error {
 	atUid := c.Locals("access_token_uuid").(string)
 	dErr := h.tr.DeleteTokens(token.TokenUuid, atUid)
 	if dErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: dErr.Error(),
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: dErr.Error(),
 		})
+		resp.FormResponse()
 
 		return nil
 	}
 
 	h.resetCookies(c)
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"isOk": true,
-		"data": domains.NewVoidResponseDomain(),
-	})
+	resp.SetStatus(c, fiber.StatusOK)
+	resp.SetData(domains.NewVoidResponseDomain())
+	resp.FormResponse()
+
+	return nil
 }
 
 func (h *LogoutHandler) resetCookies(c *fiber.Ctx) {

@@ -43,9 +43,7 @@ func main() {
 	<-done
 
 	log.Println("[Main] Stopping consumer")
-	if err := srv.GRPC.Stop; err != nil {
-		log.Panicf("[CRIT] Unable to start gRPC server. Reason: %v", err)
-	}
+	srv.GRPC.Stop()
 	srv.Redis.Disconnect()
 	srv.Mongo.Disconnect()
 

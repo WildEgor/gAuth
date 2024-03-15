@@ -24,7 +24,7 @@ func NewTokensRepository(
 }
 
 func (tr *TokensRepository) SetRT(token *models.TokenDetails) error {
-	err := tr.db.Client.Set(fmt.Sprintf("%s%s", rtPrefix, token.TokenUuid), token.UserID, time.Unix(token.ExpiresIn, 0).Sub(time.Now())).Err()
+	err := tr.db.Client.Set(fmt.Sprintf("%s%s", rtPrefix, token.TokenUuid), token.UserID, time.Until(time.Unix(token.ExpiresIn, 0))).Err()
 	if err != nil {
 		return errors.Wrap(err, "set refresh token")
 	}
@@ -42,7 +42,7 @@ func (tr *TokensRepository) GetRT(tokenUuid string) (string, error) {
 }
 
 func (tr *TokensRepository) SetAT(token *models.TokenDetails) error {
-	err := tr.db.Client.Set(fmt.Sprintf("%s%s", atPrefix, token.TokenUuid), token.UserID, time.Unix(token.ExpiresIn, 0).Sub(time.Now())).Err()
+	err := tr.db.Client.Set(fmt.Sprintf("%s%s", atPrefix, token.TokenUuid), token.UserID, time.Until(time.Unix(token.ExpiresIn, 0))).Err()
 	if err != nil {
 		return errors.Wrap(err, "set access token")
 	}

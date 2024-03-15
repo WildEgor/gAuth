@@ -24,9 +24,5 @@ func NewAppConfig(c *Configurator) *AppConfig {
 }
 
 func (ac AppConfig) IsProduction() bool {
-	if ac.Mode == "develop" {
-		return false
-	}
-
-	return true
+	return ac.Mode != "develop"
 }

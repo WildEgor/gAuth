@@ -1,6 +1,7 @@
 package otp_generate_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
 	"github.com/WildEgor/gAuth/internal/validators"
 	"github.com/gofiber/fiber/v2"
@@ -21,14 +22,15 @@ func (h *VerifyIdentityHandler) Handle(c *fiber.Ctx) error {
 
 	// TODO: impl verification logic here
 
-	c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"isOk": true,
-		"data": fiber.Map{
-			"user_id":       dto.Identity,
-			"access_token":  "",
-			"refresh_token": "",
-		},
+	resp := core_dtos.InitResponse()
+
+	resp.SetStatus(c, fiber.StatusOK)
+	resp.SetData(fiber.Map{
+		"user_id":       dto.Identity,
+		"access_token":  "",
+		"refresh_token": "",
 	})
+	resp.FormResponse()
 
 	return nil
 }

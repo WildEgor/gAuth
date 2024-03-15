@@ -32,7 +32,7 @@ func (ur *UserRepository) FindByPhone(phone string) (*models.UsersModel, error) 
 	filter := bson.D{{Key: "phone", Value: phone}}
 
 	var us models.UsersModel
-	err := ur.coll.FindOne(nil, filter).Decode(&us)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (ur *UserRepository) FindByEmail(email string) (*models.UsersModel, error) 
 	filter := bson.D{{Key: "email", Value: email}}
 
 	var us models.UsersModel
-	err := ur.coll.FindOne(nil, filter).Decode(&us)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (ur *UserRepository) FindByLogin(login string) (*models.UsersModel, error) 
 		},
 	}
 	var us models.UsersModel
-	err := ur.coll.FindOne(nil, filter).Decode(&us)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) 
 
 	filter := bson.D{{"_id", bson.D{{"$in", objectIds}}}}
 
-	cursor, err := ur.coll.Find(nil, filter)
+	cursor, err := ur.coll.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (ur *UserRepository) FindByIds(ids []string) (*[]models.UsersModel, error) 
 }
 
 func (ur *UserRepository) CountAll() (int64, error) {
-	count, err := ur.coll.CountDocuments(nil, nil)
+	count, err := ur.coll.CountDocuments(context.TODO(), nil)
 	if err != nil {
 		return 0, errors.Wrap(err, "Mongo error")
 	}
@@ -107,7 +107,7 @@ func (ur *UserRepository) FindById(id string) (*models.UsersModel, error) {
 	filter := bson.D{{Key: "_id", Value: oid}}
 
 	var us models.UsersModel
-	err := ur.coll.FindOne(nil, filter).Decode(&us)
+	err := ur.coll.FindOne(context.TODO(), filter).Decode(&us)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (ur *UserRepository) Create(nu *models.UsersModel) (*models.UsersModel, err
 				bson.D{{"email", bson.D{{"$eq", nu.Email}}}},
 			}},
 	}
-	count, err := ur.coll.CountDocuments(nil, filter)
+	count, err := ur.coll.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "Mongo error")
 	}
@@ -156,7 +156,7 @@ func (ur *UserRepository) Create(nu *models.UsersModel) (*models.UsersModel, err
 		UpdatedAt:    time.Now().UTC(),
 	}
 
-	insertResult, err := ur.coll.InsertOne(nil, us)
+	insertResult, err := ur.coll.InsertOne(context.TODO(), us)
 	if err != nil {
 		return nil, errors.New(`{"mail":"need uniq mail"}`)
 	}
@@ -178,7 +178,7 @@ func (ur *UserRepository) UpdatePassword(nu models.UsersModel) error {
 		},
 	}
 
-	_, err := ur.coll.UpdateByID(nil, nu.Id, update)
+	_, err := ur.coll.UpdateByID(context.TODO(), nu.Id, update)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (ur *UserRepository) UpdateOTP(id primitive.ObjectID, otp models.OTPModel) 
 		},
 	}
 
-	_, err := ur.coll.UpdateByID(nil, id, update)
+	_, err := ur.coll.UpdateByID(context.TODO(), id, update)
 	if err != nil {
 		return err
 	}

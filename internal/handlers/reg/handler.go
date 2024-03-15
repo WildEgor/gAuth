@@ -1,6 +1,7 @@
 package reg_handler
 
 import (
+	core_dtos "github.com/WildEgor/g-core/pkg/core/dtos"
 	"github.com/WildEgor/gAuth/internal/configs"
 	domains "github.com/WildEgor/gAuth/internal/domain"
 	authDtos "github.com/WildEgor/gAuth/internal/dtos/auth"
@@ -49,16 +50,17 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 		return err
 	}
 
+	resp := core_dtos.InitResponse()
+
 	// 1. Check if user exists
 	existed, _ := h.ur.FindByEmail(dto.Email)
 	if existed != nil {
-		c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "User already exists",
-			},
+		resp.SetStatus(c, fiber.StatusConflict)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "User already exists",
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -67,13 +69,12 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	userModel := mappers.CreateUser(dto)
 	newUser, mongoErr := h.ur.Create(userModel)
 	if mongoErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: err.Error(),
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: err.Error(),
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -82,13 +83,12 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	at, atErr := h.jwt.GenerateToken(newUser.Id.Hex(), h.jwtConfig.ATDuration)
 	rt, rtErr := h.jwt.GenerateToken(newUser.Id.Hex(), h.jwtConfig.ATDuration)
 	if atErr != nil || rtErr != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "ERR: tokens", // TODO: make better
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "ERR: tokens", // TODO: make better
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -96,13 +96,12 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	errAT := h.tr.SetAT(at)
 	errRT := h.tr.SetRT(rt)
 	if errAT != nil || errRT != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"isOk": false,
-			"data": &domains.ErrorResponseDomain{
-				Status:  "fail",
-				Message: "ERR", // TODO: make better
-			},
+		resp.SetStatus(c, fiber.StatusInternalServerError)
+		resp.SetData(&domains.ErrorResponseDomain{
+			Status:  "fail",
+			Message: "ERR", // TODO: make better
 		})
+		resp.FormResponse()
 
 		return nil
 	}
@@ -128,13 +127,13 @@ func (h *RegHandler) Handle(c *fiber.Ctx) error {
 	//	Domain:   "localhost",
 	//})
 
-	// 5. Or response with tokens
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"isOk": true,
-		"data": fiber.Map{
-			"user_id":       newUser.Id.Hex(),
-			"access_token":  at.Token,
-			"refresh_token": rt.Token,
-		},
+	resp.SetStatus(c, fiber.StatusCreated)
+	resp.SetData(fiber.Map{
+		"user_id":       newUser.Id.Hex(),
+		"access_token":  at.Token,
+		"refresh_token": rt.Token,
 	})
+	resp.FormResponse()
+
+	return nil
 }
